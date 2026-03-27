@@ -462,9 +462,7 @@ class OrganizationForm(ModelForm):
 
     def clean_monthly_free_credit_limit(self):
         credit = self.cleaned_data.get('monthly_free_credit_limit')
-        if credit is not None:
-            return credit * 3600
-        return None
+        return credit
 
     class Meta:
         model = Organization
@@ -488,10 +486,10 @@ class OrganizationForm(ModelForm):
 
         if instance is not None:
             initial['paid_credit'] = round(instance.paid_credit / 3600, 5)
-            initial['monthly_free_credit_limit'] = round(instance.monthly_free_credit_limit / 3600, 5)
+            initial['monthly_free_credit_limit'] = round(instance.monthly_free_credit_limit, 5)
         else:
             initial['paid_credit'] = 0
-            initial['monthly_free_credit_limit'] = settings.VNOJ_MONTHLY_FREE_CREDIT / 3600
+            initial['monthly_free_credit_limit'] = settings.VNOJ_MONTHLY_FREE_CREDIT
 
         super().__init__(*args, **kwargs)
 

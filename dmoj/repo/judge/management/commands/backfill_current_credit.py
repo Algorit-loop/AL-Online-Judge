@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import ExpressionWrapper, FloatField, Sum
 from django.utils import timezone
@@ -37,7 +36,7 @@ class Command(BaseCommand):
             .aggregate(Sum('credit'))['credit__sum'] or 0
         )
 
-        org.free_credit = settings.VNOJ_MONTHLY_FREE_CREDIT
+        org.free_credit = org.monthly_free_credit_limit
 
         org.consume_credit(credit_problem + credit_contest)
 

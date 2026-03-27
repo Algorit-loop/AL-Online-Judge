@@ -56,7 +56,7 @@ VNOJ_ORG_PP_SCALE = 1
 
 VNOJ_ENABLE_API = False
 VNOJ_ENABLE_SYNC_API = True  # need to make this true for testing :sad:
-GLOBAL_API_KEY = 'test-api-key-123'
+# GLOBAL_API_KEY = 'test-api-key-123'
 
 VNOJ_OFFICIAL_CONTEST_MODE = False
 
@@ -66,7 +66,7 @@ VNOJ_CP_COMMENT = 1   # Each comment vote equals 1 CP
 VNOJ_CP_TICKET = 10   # Each good ticket equals CP
 VNOJ_CP_PROBLEM = 20  # Each suggested problem equal 20 CP
 
-VNOJ_HOMEPAGE_TOP_USERS_COUNT = 5
+VNOJ_HOMEPAGE_TOP_USERS_COUNT = 10
 
 VNOJ_DISPLAY_RANKS = (
     ('user', _('Normal User')),
@@ -232,7 +232,7 @@ DMOJ_EMAIL_THROTTLING = (10, 60)
 VNOJ_DISCORD_WEBHOOK_THROTTLING = (10, 60)  # Max 10 messages in 60 seconds
 
 # Maximum number of submissions a single user can queue without the `spam_submission` permission
-DMOJ_SUBMISSION_LIMIT = 2
+DMOJ_SUBMISSION_LIMIT = 5
 DMOJ_SUBMISSIONS_REJUDGE_LIMIT = 10
 
 # Whether to allow users to view source code: 'all' | 'all-solved' | 'only-own'
@@ -785,7 +785,11 @@ SOCIAL_AUTH_PROTECTED_USER_FIELDS = ['first_name', 'last_name']
 
 IP_BASED_AUTHENTICATION_HEADER = 'REMOTE_ADDR'
 
-MOSS_API_KEY = None
+# MOSS_API_KEY = None
+
+MOSS_API_KEY = 691430341
+
+MOSS_API_KEY = 673727558
 
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 

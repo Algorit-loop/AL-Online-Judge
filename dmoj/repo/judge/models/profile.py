@@ -73,8 +73,9 @@ class Organization(models.Model):
         db_column='monthly_credit',
     )
     monthly_free_credit_limit = models.FloatField(
+        verbose_name=_('monthly free credit limit (seconds)'),
         default=settings.VNOJ_MONTHLY_FREE_CREDIT,
-        help_text=_('Amount of free credits allocated each month'),
+        help_text=_('Amount of free credits (in seconds) allocated each month. Default: 10800 = 3 hours.'),
     )
 
     _pp_table = [pow(settings.VNOJ_ORG_PP_STEP, i) for i in range(settings.VNOJ_ORG_PP_ENTRIES)]
