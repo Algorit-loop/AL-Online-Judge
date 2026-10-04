@@ -455,10 +455,8 @@ msgid "problem name"
 msgstr "tên bài toán"
 
 #: judge/admin/submission.py:226 judge/models/profile.py:148
-#, fuzzy
-#| msgid "{time}"
 msgid "time"
-msgstr "{time}"
+msgstr "thời gian"
 
 #: judge/admin/submission.py:230
 #, fuzzy
@@ -6228,7 +6226,7 @@ msgstr "Tập tin đầu ra"
 
 #: templates/problem/data.html:725
 msgid "Pretest?"
-msgstr ""
+msgstr "Pretest?"
 
 #: templates/problem/data.html:726
 msgid "Generator args"
@@ -6240,7 +6238,7 @@ msgstr "Sửa tham số trình sinh test"
 
 #: templates/problem/data.html:773
 msgid "Apply!"
-msgstr ""
+msgstr "Áp dụng!"
 
 #: templates/problem/data.html:774
 msgid "Add new case"

@@ -14,6 +14,7 @@ from judge.models.profile import Badge, Organization, OrganizationMonthlyUsage, 
 from judge.models.ai_code_review import AICodeReview
 from judge.models.ai_gen_code import AIGenCode
 from judge.models.ai_prompt import AIPromptTemplate
+from judge.models.ai_usage import AIModelPrice, AIUsageLog
 from judge.models.api_key import AIAPIKey, AIAPIKeyTestLog
 from judge.models.gensol_job import GensolJob
 from judge.models.user_problem_tag import UserProblemTag

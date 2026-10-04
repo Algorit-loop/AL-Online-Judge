@@ -1,0 +1,61 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block extrastyle %}{{ block.super }}
+    <style>
+        .usage-totals {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 15px;
+        }
+
+        .usage-total {
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f8f8;
+        }
+
+        .usage-total .label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .usage-total .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .usage-total.cost .value {
+            color: #2e7d32;
+        }
+
+        .usage-note {
+            margin: -8px 0 15px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+{% endblock %}
+
+{% block result_list %}
+    {% if usage_totals %}
+        <div class="usage-totals">
+            <div class="usage-total"><span class="label">{% trans "Calls" %}</span><span class="value">{{ usage_totals.calls|default:0 }}</span></div>
+            <div class="usage-total"><span class="label">{% trans "Input" %}</span><span class="value">{{ usage_totals.input|default:0 }}</span></div>
+            <div class="usage-total"><span class="label">{% trans "Cached" %}</span><span class="value">{{ usage_totals.cached|default:0 }}</span></div>
+            <div class="usage-total"><span class="label">{% trans "Output" %}</span><span class="value">{{ usage_totals.output|default:0 }}</span></div>
+            <div class="usage-total"><span class="label">{% trans "Reasoning" %}</span><span class="value">{{ usage_totals.reasoning|default:0 }}</span></div>
+            <div class="usage-total"><span class="label">{% trans "Total tokens" %}</span><span class="value">{{ usage_totals.total|default:0 }}</span></div>
+            <div class="usage-total cost"><span class="label">{% trans "Cost (USD)" %}</span><span class="value">{{ usage_totals.cost_text }}</span></div>
+        </div>
+        {% if usage_totals.unpriced %}
+            <p class="usage-note">{% blocktrans with n=usage_totals.unpriced %}{{ n }} call(s) use a model with no price in "AI model prices" and are not counted in the cost.{% endblocktrans %}</p>
+        {% endif %}
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

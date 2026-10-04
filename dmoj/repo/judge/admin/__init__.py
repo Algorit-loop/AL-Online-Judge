@@ -13,6 +13,7 @@ from judge.admin.profile import ProfileAdmin, UserAdmin
 from judge.admin.ai_api_key import AIAPIKeyAdmin, AIAPIKeyTestLogAdmin
 from judge.admin.ai_code_review import AICodeReviewAdmin
 from judge.admin.ai_gen_code import AIGenCodeAdmin
+from judge.admin.ai_usage import AIModelPriceAdmin, AIUsageLogAdmin
 from judge.admin.ai_prompt import AIPromptTemplateAdmin
 from judge.admin.gensol_job import GensolJobAdmin
 from judge.admin.run_submission import RunSubmissionAdmin
@@ -30,6 +31,7 @@ from judge.models.api_key import AIAPIKey, AIAPIKeyTestLog
 from judge.models.ai_code_review import AICodeReview
 from judge.models.ai_gen_code import AIGenCode
 from judge.models.ai_prompt import AIPromptTemplate
+from judge.models.ai_usage import AIModelPrice, AIUsageLog
 
 admin.site.register(BlogPost, BlogPostAdmin)
 admin.site.register(BlogPostTag, BlogPostTagAdmin)
@@ -66,4 +68,6 @@ admin.site.register(AIAPIKey, AIAPIKeyAdmin)
 admin.site.register(AIAPIKeyTestLog, AIAPIKeyTestLogAdmin)
 admin.site.register(AICodeReview, AICodeReviewAdmin)
 admin.site.register(AIGenCode, AIGenCodeAdmin)
+admin.site.register(AIUsageLog, AIUsageLogAdmin)
+admin.site.register(AIModelPrice, AIModelPriceAdmin)
 admin.site.register(AIPromptTemplate, AIPromptTemplateAdmin)

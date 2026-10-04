@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 
 from judge.models.ai_code_review import AICodeReview
 from judge.models.ai_prompt import AIPromptTemplate
+from judge.models.ai_usage import AIUsageLog
 from judge.models.api_key import (
     AIAPIKey,
     AI_PROVIDER_CONFIGS, AI_PROVIDER_MODELS,
@@ -17,6 +18,7 @@ from judge.models.api_key import (
 from judge.models.problem import ProblemType
 from judge.models.submission import Submission
 from judge.models.user_problem_tag import UserProblemTag
+from judge.utils.ai_usage import extract_usage, record_usage
 from judge.views.ai_problem_creator import _extract_text_from_response
 from judge.views.api_key import _parse_http_error
 
@@ -136,10 +138,14 @@ def _build_review_payload(provider, model, system_prompt, source_code):
 
 
 def _call_review_provider(provider, model, api_key, system_prompt, source_code):
-    """Call AI provider for code review. Returns (success, text_or_error)."""
+    """
+    Call AI provider for code review. Returns (success, text_or_error, usage).
+    usage is the normalized token usage when the provider answered (even if the answer was unusable,
+    since it is billed anyway), else None.
+    """
     payload = _build_review_payload(provider, model, system_prompt, source_code)
     if payload is None:
-        return False, _('Unsupported provider')
+        return False, _('Unsupported provider'), None
 
     config = AI_PROVIDER_CONFIGS[provider]
     url = config['base_url'] + config['endpoint']
@@ -158,15 +164,16 @@ def _call_review_provider(provider, model, api_key, system_prompt, source_code):
         with urllib.request.urlopen(req, timeout=_AI_REVIEW_TIMEOUT) as resp:
             response_data = json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        return False, _parse_http_error(e)
+        return False, _parse_http_error(e), None
     except Exception as e:
-        return False, _('Connection error: %s') % str(e)
+        return False, _('Connection error: %s') % str(e), None
 
+    usage = extract_usage(provider, response_data)
     text = _extract_text_from_response(provider, response_data)
     if not text:
-        return False, _('Empty response from AI provider')
+        return False, _('Empty response from AI provider'), usage
 
-    return True, text.strip()
+    return True, text.strip(), usage
 
 
 def _get_submission_for_review(submission_id, user):
@@ -256,11 +263,12 @@ def _ai_code_review_post(request, submission):
     system_prompt = _get_review_prompt(sub, output_language)
 
     try:
-        success, result = _call_review_provider(provider, model, plaintext_key, system_prompt, source)
+        success, result, usage = _call_review_provider(provider, model, plaintext_key, system_prompt, source)
     finally:
         plaintext_key = None  # noqa: F841
 
     if not success:
+        record_usage(AIUsageLog.FEATURE_CODE_REVIEW, request.profile, provider, model, usage, success=False)
         return JsonResponse({'error': result}, status=400)
 
     # Update last_used_at
@@ -287,6 +295,7 @@ def _ai_code_review_post(request, submission):
         output_language=output_language,
         tags=suggested_tags,
     )
+    record_usage(AIUsageLog.FEATURE_CODE_REVIEW, request.profile, provider, model, usage, code_review=review)
 
     return JsonResponse({
         'success': True,

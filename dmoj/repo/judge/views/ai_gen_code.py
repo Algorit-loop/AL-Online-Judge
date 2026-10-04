@@ -11,10 +11,12 @@ from django.utils.translation import gettext as _
 from judge.models import Problem
 from judge.models.ai_gen_code import AIGenCode
 from judge.models.ai_prompt import AIPromptTemplate
+from judge.models.ai_usage import AIUsageLog
 from judge.models.api_key import (
     AIAPIKey,
     AI_PROVIDER_CONFIGS, AI_PROVIDER_MODELS,
 )
+from judge.utils.ai_usage import extract_usage, record_usage
 from judge.views.ai_problem_creator import _extract_text_from_response
 from judge.views.api_key import _parse_http_error
 
@@ -105,10 +107,14 @@ def _build_gen_code_payload(provider, model, system_prompt, user_message):
 
 
 def _call_gen_code_provider(provider, model, api_key, system_prompt, user_message):
-    """Call AI provider for code generation. Returns (success, text_or_error)."""
+    """
+    Call AI provider for code generation. Returns (success, text_or_error, usage).
+    usage is the normalized token usage when the provider answered (even if the answer was unusable,
+    since it is billed anyway), else None.
+    """
     payload = _build_gen_code_payload(provider, model, system_prompt, user_message)
     if payload is None:
-        return False, _('Unsupported provider')
+        return False, _('Unsupported provider'), None
 
     config = AI_PROVIDER_CONFIGS[provider]
     url = config['base_url'] + config['endpoint']
@@ -127,18 +133,19 @@ def _call_gen_code_provider(provider, model, api_key, system_prompt, user_messag
         with urllib.request.urlopen(req, timeout=_AI_GEN_CODE_TIMEOUT) as resp:
             response_data = json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        return False, _parse_http_error(e)
+        return False, _parse_http_error(e), None
     except Exception as e:
-        return False, _('Connection error: %s') % str(e)
+        return False, _('Connection error: %s') % str(e), None
 
+    usage = extract_usage(provider, response_data)
     text = _extract_text_from_response(provider, response_data)
     if not text:
-        return False, _('Empty response from AI provider')
+        return False, _('Empty response from AI provider'), usage
 
     # Check if AI refused due to invalid problem description
     text = text.strip()
     if text.upper().startswith('ERROR:'):
-        return False, text[6:].strip()
+        return False, text[6:].strip(), usage
 
     # Strip markdown code fences if AI wraps output
     if text.startswith('```'):
@@ -149,7 +156,7 @@ def _call_gen_code_provider(provider, model, api_key, system_prompt, user_messag
             lines = lines[:-1]
         text = '\n'.join(lines)
 
-    return True, text.strip()
+    return True, text.strip(), usage
 
 
 @login_required
@@ -212,11 +219,12 @@ def ai_gen_code_view(request, problem):
     user_message = 'Generate the C++ generator program for this problem. Return ONLY the source code.'
 
     try:
-        success, result = _call_gen_code_provider(provider, model, plaintext_key, system_prompt, user_message)
+        success, result, usage = _call_gen_code_provider(provider, model, plaintext_key, system_prompt, user_message)
     finally:
         plaintext_key = None  # noqa: F841
 
     if not success:
+        record_usage(AIUsageLog.FEATURE_GEN_CODE, request.profile, provider, model, usage, success=False)
         return JsonResponse({'error': result}, status=400)
 
     # Update last_used_at
@@ -224,7 +232,7 @@ def ai_gen_code_view(request, problem):
     api_key_obj.save(update_fields=['last_used_at'])
 
     # Save to database
-    AIGenCode.objects.create(
+    gen_code = AIGenCode.objects.create(
         problem=problem_obj,
         user=request.profile,
         provider=provider,
@@ -232,6 +240,7 @@ def ai_gen_code_view(request, problem):
         num_cases=num_cases,
         generated_code=result,
     )
+    record_usage(AIUsageLog.FEATURE_GEN_CODE, request.profile, provider, model, usage, gen_code=gen_code)
 
     return JsonResponse({
         'success': True,
