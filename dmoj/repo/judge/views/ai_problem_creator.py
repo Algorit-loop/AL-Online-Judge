@@ -156,11 +156,6 @@ def _extract_text_from_response(provider, data):
         if content:
             return content[0].get('text', '')
         return ''
-    elif provider == 'deepseek':
-        choices = data.get('choices', [])
-        if choices:
-            return choices[0].get('message', {}).get('content', '')
-        return ''
     return ''
 
 

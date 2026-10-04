@@ -135,7 +135,7 @@
     var GENSOL_START   = "{{ url('gensol_start', problem.code) }}";
     var KEYS_URL       = "{{ url('api_key_list') }}";
     var CSRF_TOKEN     = "{{ csrf_token }}";
-    var PROVIDER_NAMES = {openai:'OpenAI', gemini:'Google Gemini', claude:'Anthropic Claude', deepseek:'DeepSeek'};
+    var PROVIDER_NAMES = {openai:'OpenAI', gemini:'Google Gemini', claude:'Anthropic Claude'};
 
     var SAVED_GENERATOR = {{ saved_generator_source|safe }};
     var SAVED_SOLUTION  = {{ saved_solution_source|safe }};

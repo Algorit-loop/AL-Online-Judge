@@ -14,7 +14,6 @@ AI_PROVIDER_CHOICES = [
     ('openai', 'OpenAI'),
     ('gemini', 'Google Gemini'),
     ('claude', 'Anthropic Claude'),
-    ('deepseek', 'DeepSeek'),
 ]
 
 # Providers that support image/PDF vision input
@@ -57,19 +56,12 @@ AI_PROVIDER_MODELS = {
         'claude-haiku-4-5',
         'claude-haiku-4-5-20251001',
     ],
-    'deepseek': [
-        'deepseek-v4-flash',
-        'deepseek-v4-pro',
-        'deepseek-chat',
-        'deepseek-reasoner',
-    ],
 }
 
 AI_PROVIDER_DEFAULT_MODELS = {
     'openai': 'gpt-6-luna',
     'gemini': 'gemini-3.5-flash-lite',
     'claude': 'claude-sonnet-5-5',
-    'deepseek': 'deepseek-chat',
 }
 
 AI_PROVIDER_CONFIGS = {
@@ -94,13 +86,6 @@ AI_PROVIDER_CONFIGS = {
         'auth_header': 'x-api-key',
         'auth_format': '{key}',
         'extra_headers': {'anthropic-version': '2023-06-01'},
-    },
-    'deepseek': {
-        'base_url': 'https://api.deepseek.com',
-        'endpoint': '/chat/completions',
-        'models_endpoint': '/models',
-        'auth_header': 'Authorization',
-        'auth_format': 'Bearer {key}',
     },
 }
 

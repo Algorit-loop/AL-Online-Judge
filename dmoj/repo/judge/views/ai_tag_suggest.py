@@ -73,14 +73,6 @@ def _build_tag_suggest_payload(provider, model, system_prompt, user_message):
             'system': system_prompt,
             'messages': [{'role': 'user', 'content': user_message}],
         }
-    elif provider == 'deepseek':
-        return {
-            'model': model,
-            'messages': [
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': user_message},
-            ],
-        }
     return None
 
 

@@ -132,14 +132,6 @@ def _build_review_payload(provider, model, system_prompt, source_code):
             'system': system_prompt,
             'messages': [{'role': 'user', 'content': source_code}],
         }
-    elif provider == 'deepseek':
-        return {
-            'model': model,
-            'messages': [
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': source_code},
-            ],
-        }
     return None
 
 
