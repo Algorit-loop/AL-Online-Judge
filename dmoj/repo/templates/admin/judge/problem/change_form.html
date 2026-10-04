@@ -110,6 +110,7 @@
             {% if original %}
             // === AI Tag Suggest ===
             var PROVIDER_MODELS = {{ ai_provider_models_json|safe }};
+            var DEFAULT_MODELS = {{ ai_provider_default_models_json|safe }};
             var SUGGEST_URL = '{% url "admin:judge_problem_ai_suggest_tags" original.pk %}';
             var PROVIDER_NAMES = {
                 'openai': 'OpenAI',
@@ -164,6 +165,8 @@
                     models.forEach(function(m) {
                         $modelSelect.append($('<option>').val(m).text(m));
                     });
+                    var def = DEFAULT_MODELS[this.value];
+                    if (def && models.indexOf(def) !== -1) $modelSelect.val(def);
                 });
 
                 // Toggle panel

@@ -224,6 +224,7 @@
             'use strict';
 
             var MODELS = {{ provider_models_json|safe }};
+            var DEFAULT_MODELS = {{ provider_default_models_json|safe }};
             var REVIEW_URL = '{{ url("submission_ai_review", submission.id) }}';
             var TAGS_NOT_RECORDED_MSG = {{ _('Tags are only added to your skills progress for accepted (AC) submissions.')|htmltojs }};
             var KEYS_URL = '{{ url("api_key_list") }}';
@@ -357,10 +358,10 @@
                     opt.textContent = m;
                     modelSel.appendChild(opt);
                 });
-                // Select default model if available
-                var vk = verifiedProviders[providerSel.value];
-                if (vk && vk.default_model) {
-                    modelSel.value = vk.default_model;
+                // Select the provider's default model
+                var def = DEFAULT_MODELS[providerSel.value];
+                if (def && models.indexOf(def) !== -1) {
+                    modelSel.value = def;
                 }
             }
 

@@ -98,6 +98,7 @@
     'use strict';
 
     var PROVIDER_MODELS = {{ provider_models_json|safe }};
+    var DEFAULT_MODELS = {{ provider_default_models_json|safe }};
     var PROCESS_URL = "{% url 'admin:judge_problem_ai_create_process' %}";
     var ADD_URL = "{% url 'admin:judge_problem_add' %}";
 
@@ -133,6 +134,8 @@
             opt.textContent = m;
             modelSelect.appendChild(opt);
         });
+        var def = DEFAULT_MODELS[this.value];
+        if (def && models.indexOf(def) !== -1) modelSelect.value = def;
     });
 
     form.addEventListener('submit', function(e) {

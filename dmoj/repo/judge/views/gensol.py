@@ -15,7 +15,7 @@ from django.utils.translation import gettext as _
 
 from judge.models import Problem, Language
 from judge.models.ai_gen_code import AIGenCode
-from judge.models.api_key import AI_PROVIDER_MODELS
+from judge.models.api_key import AI_PROVIDER_DEFAULT_MODELS, AI_PROVIDER_MODELS
 from judge.models.gensol_job import GensolJob, GENSOL_IN_PROGRESS_STATUSES
 from judge.models.problem_data import ProblemTestCase
 
@@ -106,6 +106,7 @@ def generate_testcase_view(request, problem):
         'ACE_URL': settings.ACE_URL,
         'languages': languages,
         'provider_models_json': _safe_json(json.dumps(AI_PROVIDER_MODELS)),
+        'provider_default_models_json': _safe_json(json.dumps(AI_PROVIDER_DEFAULT_MODELS)),
         'gensol_job': latest_job,
         'saved_generator_source': _safe_json(json.dumps(saved_generator)) if saved_generator else 'null',
         'saved_solution_source': _safe_json(json.dumps(latest_job.solution_source)) if latest_job else 'null',

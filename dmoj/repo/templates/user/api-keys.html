@@ -148,7 +148,8 @@ $(function() {
 
     function statusHtml(k) {
         if (k.status === 'verified')
-            return '<span style="color:#2e7d32;font-weight:500"><i class="fa fa-check-circle"></i> ' + esc(k.status_display) + '</span>';
+            return '<span style="color:#2e7d32;font-weight:500"><i class="fa fa-check-circle"></i> ' + esc(k.status_display) + '</span>'
+                + (k.status_detail ? '<br><small style="color:#666">' + esc(k.status_detail) + '</small>' : '');
         if (k.status === 'failed')
             return '<span style="color:#c62828;font-weight:500"><i class="fa fa-times-circle"></i> ' + esc(k.status_display) + '</span>'
                 + (k.status_detail ? '<br><small style="color:#c62828">' + esc(k.status_detail) + '</small>' : '');

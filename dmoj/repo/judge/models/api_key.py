@@ -22,6 +22,12 @@ VISION_PROVIDERS = {'openai', 'gemini', 'claude'}
 
 AI_PROVIDER_MODELS = {
     'openai': [
+        'gpt-6-astra',
+        'gpt-6-sol',
+        'gpt-6-luna',
+        'gpt-5.6-sol',
+        'gpt-5.6-terra',
+        'gpt-5.6-luna',
         'gpt-5.5',
         'gpt-5.4',
         'gpt-5.4-mini',
@@ -31,6 +37,8 @@ AI_PROVIDER_MODELS = {
         'gpt-4o-mini',
     ],
     'gemini': [
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
         'gemini-3.1-pro-preview',
         'gemini-3.1-pro-preview-customtools',
         'gemini-3-flash-preview',
@@ -40,6 +48,9 @@ AI_PROVIDER_MODELS = {
         'gemini-2.5-flash-lite',
     ],
     'claude': [
+        'claude-fable-5-1',
+        'claude-opus-5-5',
+        'claude-sonnet-5-5',
         'claude-opus-4-8',
         'claude-opus-4-7',
         'claude-sonnet-4-6',
@@ -55,9 +66,9 @@ AI_PROVIDER_MODELS = {
 }
 
 AI_PROVIDER_DEFAULT_MODELS = {
-    'openai': 'gpt-4o-mini',
-    'gemini': 'gemini-2.5-flash',
-    'claude': 'claude-sonnet-4-6',
+    'openai': 'gpt-6-luna',
+    'gemini': 'gemini-3.5-flash-lite',
+    'claude': 'claude-sonnet-5-5',
     'deepseek': 'deepseek-chat',
 }
 
@@ -65,18 +76,21 @@ AI_PROVIDER_CONFIGS = {
     'openai': {
         'base_url': 'https://api.openai.com',
         'endpoint': '/v1/responses',
+        'models_endpoint': '/v1/models',
         'auth_header': 'Authorization',
         'auth_format': 'Bearer {key}',
     },
     'gemini': {
         'base_url': 'https://generativelanguage.googleapis.com',
         'endpoint': '/v1beta/models/{model}:generateContent',
+        'models_endpoint': '/v1beta/models?pageSize=1000',
         'auth_header': 'x-goog-api-key',
         'auth_format': '{key}',
     },
     'claude': {
         'base_url': 'https://api.anthropic.com',
         'endpoint': '/v1/messages',
+        'models_endpoint': '/v1/models?limit=1000',
         'auth_header': 'x-api-key',
         'auth_format': '{key}',
         'extra_headers': {'anthropic-version': '2023-06-01'},
@@ -84,6 +98,7 @@ AI_PROVIDER_CONFIGS = {
     'deepseek': {
         'base_url': 'https://api.deepseek.com',
         'endpoint': '/chat/completions',
+        'models_endpoint': '/models',
         'auth_header': 'Authorization',
         'auth_format': 'Bearer {key}',
     },

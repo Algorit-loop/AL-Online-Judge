@@ -18,7 +18,7 @@ from django.utils.translation import gettext, gettext_lazy as _, ngettext
 
 from judge.admin.version_diff import DiffVersionAdmin
 from judge.models import LanguageLimit, Problem, ProblemClarification, ProblemTranslation, Profile, Solution
-from judge.models.api_key import AIAPIKey, AI_PROVIDER_MODELS, VISION_PROVIDERS
+from judge.models.api_key import AIAPIKey, AI_PROVIDER_DEFAULT_MODELS, AI_PROVIDER_MODELS, VISION_PROVIDERS
 from judge.views.ai_tag_suggest import call_ai_suggest_tags
 from judge.utils.views import NoBatchDeleteMixin
 from judge.views.widgets import pdf_statement_uploader
@@ -273,6 +273,7 @@ class ProblemAdmin(NoBatchDeleteMixin, DiffVersionAdmin):
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         extra_context = extra_context or {}
         extra_context['ai_provider_models_json'] = json.dumps(AI_PROVIDER_MODELS)
+        extra_context['ai_provider_default_models_json'] = json.dumps(AI_PROVIDER_DEFAULT_MODELS)
         return super().changeform_view(request, object_id, form_url, extra_context)
 
     def get_urls(self):
@@ -296,6 +297,7 @@ class ProblemAdmin(NoBatchDeleteMixin, DiffVersionAdmin):
             **self.admin_site.each_context(request),
             'title': _('Create Problem with AI'),
             'provider_models_json': json.dumps(vision_models),
+            'provider_default_models_json': json.dumps(AI_PROVIDER_DEFAULT_MODELS),
             'has_permission': True,
         }
         return TemplateResponse(request, 'admin/judge/problem/ai_create.html', context)

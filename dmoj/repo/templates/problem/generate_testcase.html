@@ -342,6 +342,7 @@
 
     /* ── Config ── */
     var AI_MODELS      = {{ provider_models_json|safe }};
+    var AI_DEFAULT_MODELS = {{ provider_default_models_json|safe }};
     var AI_GEN_URL     = "{{ url('ai_gen_code', problem.code) }}";
     var GENSOL_START   = "{{ url('gensol_start', problem.code) }}";
     var KEYS_URL       = "{{ url('api_key_list') }}";
@@ -590,12 +591,15 @@
     function updateModels() {
         var mSel = document.getElementById('ai-gen-model');
         mSel.innerHTML = '';
-        var models = AI_MODELS[document.getElementById('ai-gen-provider').value] || [];
+        var provider = document.getElementById('ai-gen-provider').value;
+        var models = AI_MODELS[provider] || [];
         models.forEach(function(m) {
             var opt = document.createElement('option');
             opt.value = m; opt.textContent = m;
             mSel.appendChild(opt);
         });
+        var def = AI_DEFAULT_MODELS[provider];
+        if (def && models.indexOf(def) !== -1) mSel.value = def;
     }
 
     document.getElementById('ai-gen-provider').addEventListener('change', updateModels);

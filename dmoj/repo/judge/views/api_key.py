@@ -9,13 +9,11 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
-from judge.models.ai_prompt import AIPromptTemplate
 from judge.models.api_key import (
     AIAPIKey, AIAPIKeyTestLog,
     AI_PROVIDER_CHOICES, AI_PROVIDER_MODELS, AI_PROVIDER_DEFAULT_MODELS, AI_PROVIDER_CONFIGS,
 )
 
-_DEFAULT_API_TEST_PROMPT = 'Reply exactly: OK'
 from judge.views.user import UserPage
 
 
@@ -141,8 +139,7 @@ def api_key_test(request, key_id):
     if model not in valid_models:
         return JsonResponse({'error': _('Invalid model for this provider')}, status=400)
 
-    test_func = _PROVIDER_TEST_FUNCS.get(key.provider)
-    if not test_func:
+    if key.provider not in AI_PROVIDER_CONFIGS:
         return JsonResponse({'error': _('Provider not supported')}, status=400)
 
     # Decrypt only here, use immediately, then discard
@@ -152,7 +149,7 @@ def api_key_test(request, key_id):
 
     start = time.time()
     try:
-        success, detail = test_func(plaintext, model)
+        success, detail = _check_connection(key.provider, plaintext, model)
     except Exception as e:
         success = False
         detail = str(e)
@@ -162,7 +159,7 @@ def api_key_test(request, key_id):
 
     # Update key status
     key.status = 'verified' if success else 'failed'
-    key.status_detail = '' if success else detail
+    key.status_detail = detail
     if success:
         key.last_used_at = timezone.now()
     key.save(update_fields=['status', 'status_detail', 'last_used_at'])
@@ -233,139 +230,86 @@ def api_key_all_logs(request):
     return JsonResponse({'logs': data})
 
 
-# === Provider test functions ===
-# Timeout is set to 90s because thinking/reasoning models (o3, DeepSeek-R1, etc.)
-# can take 60s+ before responding.
-_API_TEST_TIMEOUT = 90
+# === Connection check ===
+# Verifying a key only lists the provider's models: no tokens are generated or billed,
+# and an invalid key is rejected immediately, so a short timeout is enough.
+_API_TEST_TIMEOUT = 20
 
 
-def _get_test_prompt():
-    return AIPromptTemplate.get_prompt('api_key_test', _DEFAULT_API_TEST_PROMPT)
+def _extract_model_ids(provider, data):
+    """Return the set of model ids from a provider's list-models response, or None if malformed."""
+    if provider == 'gemini':
+        items = data.get('models')
+        if not isinstance(items, list):
+            return None
+        # Gemini names are "models/<id>"
+        return {str(m.get('name', '')).split('/', 1)[-1] for m in items if isinstance(m, dict)}
+    items = data.get('data')
+    if not isinstance(items, list):
+        return None
+    return {str(m.get('id', '')) for m in items if isinstance(m, dict)}
 
 
-def _test_openai(api_key, model):
-    """OpenAI Responses API: POST /v1/responses with {model, input}."""
-    config = AI_PROVIDER_CONFIGS['openai']
-    url = config['base_url'] + config['endpoint']
-    headers = {
-        'Content-Type': 'application/json',
-        config['auth_header']: config['auth_format'].format(key=api_key),
-    }
-    payload = json.dumps({
-        'model': model,
-        'input': _get_test_prompt(),
-    }).encode()
-    req = urllib.request.Request(url, data=payload, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=_API_TEST_TIMEOUT) as resp:
-            data = json.loads(resp.read())
-            if 'output' not in data and 'id' not in data:
-                return False, _('Unexpected response format')
-            return True, _('Connection successful')
-    except urllib.error.HTTPError as e:
-        return False, _parse_http_error(e)
-    except Exception as e:
-        return False, _('Connection error: %s') % str(e)
-
-
-def _test_gemini(api_key, model):
-    """Gemini API: POST /v1beta/models/{model}:generateContent, auth via x-goog-api-key header."""
-    config = AI_PROVIDER_CONFIGS['gemini']
-    url = config['base_url'] + config['endpoint'].format(model=model)
-    headers = {
-        'Content-Type': 'application/json',
-        config['auth_header']: config['auth_format'].format(key=api_key),
-    }
-    payload = json.dumps({
-        'contents': [{'parts': [{'text': _get_test_prompt()}]}],
-    }).encode()
-    req = urllib.request.Request(url, data=payload, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=_API_TEST_TIMEOUT) as resp:
-            data = json.loads(resp.read())
-            if 'candidates' not in data:
-                return False, _('Unexpected response format')
-            return True, _('Connection successful')
-    except urllib.error.HTTPError as e:
-        return False, _parse_http_error(e)
-    except Exception as e:
-        return False, _('Connection error: %s') % str(e)
-
-
-def _test_claude(api_key, model):
-    """Claude API: POST /v1/messages with {model, messages, max_tokens}, auth via x-api-key header."""
-    config = AI_PROVIDER_CONFIGS['claude']
-    url = config['base_url'] + config['endpoint']
-    headers = {
-        'Content-Type': 'application/json',
-        config['auth_header']: config['auth_format'].format(key=api_key),
-    }
+def _check_connection(provider, api_key, model):
+    """
+    Verify an API key with the provider's list-models endpoint (no prompt is sent).
+    Returns (success, detail). The key is valid if the provider accepts it; the selected model
+    is only reported on, since provider lists can omit models that still work.
+    """
+    config = AI_PROVIDER_CONFIGS[provider]
+    url = config['base_url'] + config['models_endpoint']
+    headers = {config['auth_header']: config['auth_format'].format(key=api_key)}
     headers.update(config.get('extra_headers', {}))
-    payload = json.dumps({
-        'model': model,
-        'max_tokens': 128,
-        'messages': [{'role': 'user', 'content': _get_test_prompt()}],
-    }).encode()
-    req = urllib.request.Request(url, data=payload, headers=headers)
+    req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=_API_TEST_TIMEOUT) as resp:
             data = json.loads(resp.read())
-            if 'content' not in data:
-                return False, _('Unexpected response format')
-            return True, _('Connection successful')
     except urllib.error.HTTPError as e:
         return False, _parse_http_error(e)
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, TimeoutError):
+            return False, _('Connection timed out')
+        return False, _('Cannot reach the provider: %s') % e.reason
+    except TimeoutError:
+        return False, _('Connection timed out')
+    except ValueError:
+        return False, _('Unexpected response format')
     except Exception as e:
-        return False, _('Connection error: %s') % str(e)
+        return False, _('Connection error: %s') % e
 
+    model_ids = _extract_model_ids(provider, data) if isinstance(data, dict) else None
+    if model_ids is None:
+        return False, _('Unexpected response format')
 
-def _test_deepseek(api_key, model):
-    """DeepSeek API: POST /chat/completions with {model, messages}, auth via Bearer token."""
-    config = AI_PROVIDER_CONFIGS['deepseek']
-    url = config['base_url'] + config['endpoint']
-    headers = {
-        'Content-Type': 'application/json',
-        config['auth_header']: config['auth_format'].format(key=api_key),
-    }
-    payload = json.dumps({
-        'model': model,
-        'messages': [{'role': 'user', 'content': _get_test_prompt()}],
-    }).encode()
-    req = urllib.request.Request(url, data=payload, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=_API_TEST_TIMEOUT) as resp:
-            data = json.loads(resp.read())
-            if 'choices' not in data:
-                return False, _('Unexpected response format')
-            return True, _('Connection successful')
-    except urllib.error.HTTPError as e:
-        return False, _parse_http_error(e)
-    except Exception as e:
-        return False, _('Connection error: %s') % str(e)
+    detail = _('API key is valid. %(count)d models are accessible.') % {'count': len(model_ids)}
+    if model in model_ids:
+        detail += ' ' + _('Model %(model)s is available.') % {'model': model}
+    else:
+        detail += ' ' + _('Model %(model)s was not in the provider\'s list; it may not be available to this key.') % {
+            'model': model,
+        }
+    return True, detail
 
 
 def _parse_http_error(e):
-    """Parse HTTP error into user-friendly message."""
+    """Turn an HTTP error from a provider into a short, user-friendly message."""
     try:
-        body = e.read().decode('utf-8', errors='replace')
-        data = json.loads(body)
-        msg = data.get('error', {}).get('message', '') or str(e)
+        data = json.loads(e.read().decode('utf-8', errors='replace'))
+        err = data.get('error', {}) if isinstance(data, dict) else {}
+        msg = err.get('message', '') if isinstance(err, dict) else str(err)
     except Exception:
-        msg = str(e)
-    if e.code == 401:
+        msg = ''
+    msg = (msg or '').strip()[:200]
+
+    # Gemini reports a bad key as 400 rather than 401.
+    if e.code == 401 or (e.code == 400 and 'api key' in msg.lower()):
         return _('Invalid API key')
-    elif e.code == 403:
-        return _('No permission')
-    elif e.code == 404:
+    if e.code == 403:
+        return _('No permission') + (f' ({msg})' if msg else '')
+    if e.code == 404:
         return _('Model not found')
-    elif e.code == 429:
-        return _('Rate limited, try later')
-    return f'HTTP {e.code}: {msg}'
-
-
-_PROVIDER_TEST_FUNCS = {
-    'openai': _test_openai,
-    'gemini': _test_gemini,
-    'claude': _test_claude,
-    'deepseek': _test_deepseek,
-}
+    if e.code == 429:
+        return _('Rate limited, try again later')
+    if e.code >= 500:
+        return _('Provider is unavailable (HTTP %d), try again later') % e.code
+    return f'HTTP {e.code}' + (f': {msg}' if msg else '')
