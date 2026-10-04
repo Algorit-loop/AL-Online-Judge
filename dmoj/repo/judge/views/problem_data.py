@@ -24,6 +24,7 @@ from judge.models.problem_data import CUSTOM_CHECKERS, IO_METHODS
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
 from judge.utils.views import TitleMixin, add_file_response, generic_message
+from judge.views.gensol import build_gensol_context
 from judge.views.problem import ProblemMixin
 from judge.widgets import Select2Widget
 
@@ -183,6 +184,8 @@ class ProblemSubmissionDiff(TitleMixin, ProblemMixin, DetailView):
 
 class ProblemDataView(TitleMixin, ProblemManagerMixin):
     template_name = 'problem/data.html'
+    # Which tab of the page is shown first: 'cases' (test cases) or 'generate' (AI generator)
+    active_tab = 'cases'
 
     def get_title(self):
         return _('Editing data for {0}').format(self.object.name)
@@ -191,6 +194,9 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         return mark_safe(escape(_('Editing data for %s')) % (
             format_html('<a href="{1}">{0}</a>', self.object.name,
                         reverse('problem_detail', args=[self.object.code]))))
+
+    def can_generate(self):
+        return self.object.is_editable_by(self.request.user) and self.request.user.has_perm('judge.generate_testcase_ai')
 
     def get_data_form(self, post=False):
         return ProblemDataForm(data=self.request.POST if post else None, prefix='problem-data',
@@ -220,6 +226,10 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
             valid_files = context['valid_files'] = self.get_valid_files(context['data_form'].instance)
             context['data_form'].zip_valid = valid_files is not False
             context['cases_formset'] = self.get_case_formset(valid_files)
+        context['active_tab'] = self.active_tab
+        context['can_generate'] = self.can_generate()
+        if context['can_generate']:
+            context.update(build_gensol_context(self.object))
         context['valid_files_json'] = mark_safe(json.dumps(context['valid_files']))
         context['valid_files'] = set(context['valid_files'])
         context['all_case_forms'] = chain(context['cases_formset'], [context['cases_formset'].empty_form])
@@ -266,6 +276,18 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                                                              valid_files=valid_files))
 
     put = post
+
+
+class ProblemGenerateView(ProblemDataView):
+    """Same page as ProblemDataView, opened on the "Generate with AI" tab (the tab's own URL)."""
+    active_tab = 'generate'
+    http_method_names = ['get', 'head', 'options']
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.can_generate():
+            raise Http404()
+        return super().get(request, *args, **kwargs)
 
 
 @login_required

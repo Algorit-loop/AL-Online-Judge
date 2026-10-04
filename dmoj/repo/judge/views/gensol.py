@@ -3,15 +3,10 @@ import logging
 
 from django.conf import settings
 from django.db import transaction
-from django.http import Http404, JsonResponse
-from django.urls import reverse
-from django.utils.html import escape, format_html
-from django.utils.safestring import mark_safe
+from django.http import JsonResponse
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
-from django.utils.translation import gettext as _
+from django.shortcuts import get_object_or_404
 
 from judge.models import Problem, Language
 from judge.models.ai_gen_code import AIGenCode
@@ -71,13 +66,8 @@ def _is_allowed_generator_source(problem_obj, source):
     return last_job_source is not None and candidate == _normalize_source(last_job_source)
 
 
-@login_required
-def generate_testcase_view(request, problem):
-    problem_obj = get_object_or_404(Problem, code=problem)
-    if not (problem_obj.is_editable_by(request.user)
-            and request.user.has_perm('judge.generate_testcase_ai')):
-        raise Http404()
-
+def build_gensol_context(problem_obj):
+    """Template context for the "Generate with AI" tab of the problem data page."""
     languages = list(
         Language.objects.filter(file_only=False)
         .order_by('name')
@@ -97,12 +87,7 @@ def generate_testcase_view(request, problem):
     if latest_job and latest_job.status == 'DONE' and hasattr(problem_obj, 'data_files'):
         zip_size_mb = round(problem_obj.data_files.zipfile_size / 1024 / 1024, 2)
 
-    ctx = {
-        'problem': problem_obj,
-        'title': _('Generate Testcase for %s') % problem_obj.name,
-        'content_title': mark_safe(escape(_('Generate Testcase for %s')) % format_html(
-            '<a href="{1}">{0}</a>', problem_obj.name,
-            reverse('problem_detail', args=[problem_obj.code]))),
+    return {
         'ACE_URL': settings.ACE_URL,
         'languages': languages,
         'provider_models_json': _safe_json(json.dumps(AI_PROVIDER_MODELS)),
@@ -117,8 +102,6 @@ def generate_testcase_view(request, problem):
         'saved_error_message': _safe_json(json.dumps(latest_job.error_message)) if latest_job else 'null',
         'zip_size_mb_json': json.dumps(zip_size_mb),
     }
-
-    return render(request, 'problem/generate_testcase.html', ctx)
 
 
 class GensolStartView(LoginRequiredMixin, View):
@@ -155,7 +138,7 @@ class GensolStartView(LoginRequiredMixin, View):
         if not isinstance(num_cases, int) or num_cases < 1 or num_cases > 50:
             return JsonResponse({'error': 'Number of cases must be between 1 and 50'}, status=400)
 
-        # The generator editor is read-only for non-superusers (see generate_testcase.html), so
+        # The generator editor is read-only for non-superusers (see problem/generate_testcase_panel.html), so
         # enforce that here too — otherwise the restriction is trivially bypassed by POSTing a
         # hand-edited generator. They may still change it through "Generate with AI", which stores
         # an AIGenCode row that _get_displayed_generator_source() then returns.

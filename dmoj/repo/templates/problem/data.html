@@ -593,18 +593,100 @@
             $('form').dirty('setAsClean');
         }).change();
     </script>
+    {% if can_generate %}
+    <script type="text/javascript">
+        /* Test cases / Generate with AI tabs. Each tab has its own URL: switching updates the address bar
+           (so the link, reload and back button all land on the same tab) without reloading the page. */
+        $(function () {
+            var $tabs = $('.dt-tab');
+            var PANES = {cases: $('#dt-pane-cases'), generate: $('#dt-pane-generate')};
+
+            function activate(tab) {
+                $tabs.each(function () {
+                    var on = $(this).data('tab') === tab;
+                    $(this).toggleClass('active', on).attr('aria-selected', on ? 'true' : 'false');
+                });
+                $.each(PANES, function (name, $pane) {
+                    $pane.prop('hidden', name !== tab);
+                });
+                if (tab === 'generate') {
+                    var panel = document.getElementById('gt-panel');
+                    if (panel) panel.dispatchEvent(new Event('gt-shown'));
+                }
+            }
+
+            function tabFromPath() {
+                return /\/generate\/?$/.test(window.location.pathname) ? 'generate' : 'cases';
+            }
+
+            $tabs.on('click', function (e) {
+                // Let ctrl/cmd/shift/middle-click open the link normally (e.g. in a new tab)
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.which > 1) return;
+                e.preventDefault();
+                var tab = $(this).data('tab');
+                if (tab === tabFromPath()) return;
+                activate(tab);
+                if (window.history && history.pushState) history.pushState({tab: tab}, '', this.href);
+            });
+
+            window.addEventListener('popstate', function () {
+                activate(tabFromPath());
+            });
+        });
+    </script>
+    {% endif %}
 {% endblock %}
 
 {% block media %}
     {{data_form.media.css}}
     <link rel="stylesheet" href="{{ static('vnoj/jquery-ui/jquery-ui.min.css') }}">
+    {% if can_generate %}
+        <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+        {% include "problem/generate_testcase_style.html" %}
+    {% endif %}
     <style>
+        .dt-tabs {
+            display: flex;
+            gap: 0.3em;
+            margin: 1.2em 0 1em;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .dt-tab {
+            padding: 0.55em 1.2em;
+            margin-bottom: -2px;
+            border: 2px solid transparent;
+            border-radius: 4px 4px 0 0;
+            color: #555;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .dt-tab:hover {
+            color: #3c8dbc;
+            text-decoration: none;
+        }
+
+        .dt-tab.active {
+            color: #333;
+            background: #fff;
+            border-color: #ddd #ddd #fff;
+        }
+
+        .dt-pane[hidden] {
+            display: none;
+        }
+
         #case-table .select2 {
             text-align: initial;
         }
 
+        .add-column {
+            width: 2.5em;
+        }
+
         .order-column {
-            width: 1em;
+            width: 4.5em;
         }
 
         .bad-file input, .bad-file .select2-selection {
@@ -666,12 +748,23 @@
             float: right;
         }
 
+        /* Fixed layout: file names are long, and with an auto layout the select2 boxes would stretch
+           the table past the width of the page. The two file columns share whatever width is left. */
+        #case-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
         #case-table tbody td {
             white-space: nowrap;
         }
 
         .type-column {
-            width: 8em;
+            width: 7em;
+        }
+
+        .narrow-column {
+            width: 4.8em;
         }
 
         ul.errorlist {
@@ -702,14 +795,13 @@
 {% endblock %}
 
 {% block body %}
-    {# Generate Testcase button is placed above the case table #}
 
     {% if data_form.instance.feedback %}
         <ul class="errorlist">
             <li>{{ data_form.instance.feedback }}</li>
         </ul>
     {% endif %}
-    <form action="" method="POST" enctype="multipart/form-data">
+    <form action="{{ url('problem_data', problem.code) }}" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {{ cases_formset.management_form }}
         <table class="table">
@@ -723,6 +815,21 @@
             <br>
             {{ _('Please modify the table below if needed and press the `Apply` button to save!') }}
         </div>
+        {% if can_generate %}
+            <div class="dt-tabs" role="tablist">
+                <a class="dt-tab{% if active_tab == 'cases' %} active{% endif %}" data-tab="cases" role="tab"
+                   aria-selected="{{ 'true' if active_tab == 'cases' else 'false' }}"
+                   href="{{ url('problem_data', problem.code) }}">
+                    <i class="fa fa-list"></i> {{ _('Test cases') }}
+                </a>
+                <a class="dt-tab{% if active_tab == 'generate' %} active{% endif %}" data-tab="generate" role="tab"
+                   aria-selected="{{ 'true' if active_tab == 'generate' else 'false' }}"
+                   href="{{ url('problem_generate_testcase', problem.code) }}">
+                    <i class="fa fa-magic"></i> {{ _('Generate with AI') }}
+                </a>
+            </div>
+        {% endif %}
+        <div id="dt-pane-cases" class="dt-pane"{% if active_tab == 'generate' %} hidden{% endif %}>
         {% if cases_formset._non_form_errors %}
             {{ cases_formset._non_form_errors }}
         {% endif %}
@@ -730,28 +837,23 @@
             <a id="add-case-row-btn" href="#" class="button" onclick="document.getElementById('add-case-row').click(); return false;">
                 <i class="fa fa-plus"></i> {{ _('Add Testcase') }}
             </a>
-            {% if perms.judge.generate_testcase_ai %}
-                <a href="{{ url('problem_generate_testcase', problem.code) }}" class="button" style="background: #3c8dbc; color: #fff; border-color: #3c8dbc;">
-                    <i class="fa fa-magic"></i> {{ _('Generate Testcase with AI') }}
-                </a>
-            {% endif %}
         </div>
         <table id="case-table" class="table">
             <thead>
             <tr>
-                <th><a id="add-case-first-row" href="#"><i class="fa fa-plus"></i></a></th>
+                <th class="add-column"><a id="add-case-first-row" href="#"><i class="fa fa-plus"></i></a></th>
                 <th class="order-column"></th>
                 <th class="type-column">{{ _('Type') }}</th>
                 <th>{{ _('Input file') }}</th>
                 <th>{{ _('Output file') }}</th>
-                <th>{{ _('Points') }}</th>
+                <th class="narrow-column">{{ _('Points') }}</th>
                 {% if request.user.is_staff %}
-                <th>{{ _('Pretest?') }}</th>
+                <th class="narrow-column">{{ _('Pretest?') }}</th>
                 {% endif %}
-                <th>{{ _('Sample?') }}</th>
+                <th class="narrow-column">{{ _('Sample?') }}</th>
                 <!-- <th class="generator-args">{{ _('Generator args') }}</th> -->
                 {% if cases_formset.can_delete %}
-                    <th>{{ _('Delete?') }}
+                    <th class="narrow-column">{{ _('Delete?') }}
                         <br>
                         <input type="checkbox" name="delete-all" id="delete-all">
                     </th>
@@ -801,6 +903,13 @@
         </table>
         <input type="submit" value="{{ _('Apply!') }}" class="button" id="submit-button">
         <a id="add-case-row" href="#" style="display: None;"><i class="fa fa-plus"></i> {{ _('Add new case') }}</a>
+        </div>
     </form>
+    {% if can_generate %}
+        {# Outside the <form>: its inputs must not mark the data form dirty or submit with it #}
+        <div id="dt-pane-generate" class="dt-pane"{% if active_tab != 'generate' %} hidden{% endif %}>
+            {% include "problem/generate_testcase_panel.html" %}
+        </div>
+    {% endif %}
     <div style="display: none" class="generator-args-editor"><textarea></textarea><a class="button">{{ _('Save') }}</a></div>
 {% endblock %}
