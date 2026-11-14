@@ -595,8 +595,7 @@ class AllUserSubmissions(InfinitePaginationMixin, ConditionalUserTabMixin, UserM
 
     def get_context_data(self, **kwargs):
         context = super(AllUserSubmissions, self).get_context_data(**kwargs)
-        context['dynamic_update'] = context['page_obj'].number == 1 # Only update dynamically on the first page, otherwise it will cause problems when user goes to page 2, 3, ...
-        # context['dynamic_update'] = True // All submissions/ page -> realtime update
+        context['dynamic_update'] = context['page_obj'].number == 1
         context['dynamic_user_id'] = self.profile.id
         return context
 
@@ -659,8 +658,7 @@ class ProblemSubmissionsBase(SubmissionsListBase):
     def get_context_data(self, **kwargs):
         context = super(ProblemSubmissionsBase, self).get_context_data(**kwargs)
         if self.dynamic_update:
-            context['dynamic_update'] = context['page_obj'].number == 1 # Only update dynamically on the first page, otherwise it will cause problems when user goes to page 2, 3, ...
-            # context['dynamic_update'] = True
+            context['dynamic_update'] = context['page_obj'].number == 1
             context['dynamic_problem_id'] = self.problem.id
         if hasattr(self, 'contest'):
             context['best_submissions_link'] = reverse('contest_ranked_submissions',
@@ -812,8 +810,7 @@ class AllSubmissions(InfinitePaginationMixin, SubmissionsListBase):
 
     def get_context_data(self, **kwargs):
         context = super(AllSubmissions, self).get_context_data(**kwargs)
-        context['dynamic_update'] = context['page_obj'].number == 1 # Only update dynamically on the first page, otherwise it will cause problems when user goes to page 2, 3, ...
-        # context['dynamic_update'] = True # All submissions/ page -> realtime update
+        context['dynamic_update'] = context['page_obj'].number == 1
         context['stats_update_interval'] = self.stats_update_interval
         return context
 
