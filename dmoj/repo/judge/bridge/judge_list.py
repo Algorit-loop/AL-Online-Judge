@@ -275,14 +275,17 @@ class JudgeList(object):
             if available:
                 judge = min(available, key=lambda judge: (judge.load, random()))
                 logger.info('Dispatched run %d to: %s', id, judge.name)
-                self.submission_map[key] = judge
                 try:
                     judge.run_submit(id, problem, language, source, sample_input_files, custom_inputs)
+                except SubmissionUnavailable:
+                    logger.error('Dropping run %d, it is no longer available', id)
+                    return
                 except Exception:
                     logger.exception('Failed to dispatch run %d (%s, %s) to %s', id, problem, language, judge.name)
                     self.judges.discard(judge)
                     return self.judge_run(id, problem, language, source, judge_id, priority,
                                           banned_judges, sample_input_files, custom_inputs)
+                self.submission_map[key] = judge
             else:
                 self.node_map[key] = self.queue.insert(
                     (id, problem, language, source, judge_id, banned_judges, True, sample_input_files, custom_inputs, False, None),
@@ -310,14 +313,17 @@ class JudgeList(object):
             if available:
                 judge = min(available, key=lambda judge: (judge.load, random()))
                 logger.info('Dispatched gensol %d to: %s', id, judge.name)
-                self.submission_map[key] = judge
                 try:
                     judge.gensol_submit(id, problem, language, source, gensol_step)
+                except SubmissionUnavailable:
+                    logger.error('Dropping gensol %d, it is no longer available', id)
+                    return
                 except Exception:
                     logger.exception('Failed to dispatch gensol %d (%s, %s) to %s', id, problem, language, judge.name)
                     self.judges.discard(judge)
                     return self.judge_gensol(id, problem, language, source, judge_id, priority,
                                              banned_judges, gensol_step)
+                self.submission_map[key] = judge
             else:
                 self.node_map[key] = self.queue.insert(
                     (id, problem, language, source, judge_id, banned_judges, False, [], [], True, gensol_step),

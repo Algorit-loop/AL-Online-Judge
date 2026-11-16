@@ -308,7 +308,7 @@ class JudgeHandler(ZlibPacketHandler):
     def run_submit(self, id, problem, language, source, sample_input_files, custom_inputs=None):
         data = self.get_related_run_data(id)
         if data is None:
-            raise RuntimeError('RunSubmission vanished: %s' % id)
+            raise SubmissionUnavailable('run %s vanished before it could be dispatched' % id)
         self._working = id
         self._is_run = True
         self._run_num_samples = len(data.sample_input_files)
@@ -341,7 +341,7 @@ class JudgeHandler(ZlibPacketHandler):
     def gensol_submit(self, id, problem, language, source, gensol_step):
         data = self.get_related_gensol_data(id, gensol_step)
         if data is None:
-            raise RuntimeError('GensolJob vanished: %s' % id)
+            raise SubmissionUnavailable('gensol job %s vanished before it could be dispatched' % id)
         self._working = id
         self._is_run = False
         self._is_gensol = True
