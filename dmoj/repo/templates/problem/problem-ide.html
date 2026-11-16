@@ -169,6 +169,14 @@
         .ide-editor .cm-editor .cm-gutters { font-family: var(--mono); border-right: 1px solid var(--bd); }
         .ide-editor .cm-editor.cm-focused { outline: none; }
 
+        /* File-only languages: upload box instead of the editor, as on the submit page */
+        .ide-file-submit { position: absolute; inset: 0; padding: 12px; overflow: auto; }
+        .ide-file-drag {
+            display: block; padding: 1.5em; border: 2px dashed #999; border-radius: 7px;
+            color: #999; text-align: center; cursor: pointer; transition: background .3s, color .3s;
+        }
+        .ide-file-drag:hover, .ide-file-drag.hover { background: #ddd; border-style: solid; box-shadow: inset 0 3px 4px #999; }
+
         /* === Bottom Panel === */
         .ide-bot {
             height: 240px; min-height: 80px; display: flex; flex-direction: column;
@@ -628,8 +636,45 @@
                 }
             } catch(e) {}
         })();
-        $L.on('change', function() { save(); saveLang(); setMode(); loadCode(lid()); });
-        setMode(); loadCode(lid());
+        // File-only languages (Output Only, Scratch...) submit a file, as on the submit page:
+        // show the upload box instead of the editor, and grey out Run
+        function isFileOnly() { return $L.find(':selected').attr('data-fileonly') === 'True'; }
+        function setFileMode() {
+            var on = isFileOnly(), $o = $L.find(':selected');
+            $('#ace-ed').toggle(!on);
+            $('#ide-file-submit').toggle(on);
+            $('#btn-run').prop('disabled', on || !!rid);
+            if (on) {
+                var file_ext = '.' + $o.attr('data-ext'), file_size_limit = $o.attr('data-file-size');
+                $('#ide-file-upload').val('').attr({accept: file_ext});
+                $('#ide-file-drag').html(
+                    '<b>{{ _("Click to select a file or drag a file into this box") }}</b><br>' +
+                    {{ _('`Only accept "${file_ext}". Maximum file size is ${file_size_limit}MB.`') }}
+                );
+            }
+        }
+        function showFile() {
+            var file = $('#ide-file-upload')[0].files[0];
+            if (file) {
+                $('#ide-file-drag').html(
+                    '<b>{{ _("File name") }}:</b> ' + esc(file.name) + '<br>' +
+                    '<b>{{ _("File size") }}:</b> ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+                );
+            }
+        }
+        $('#ide-file-upload').on('change', showFile);
+        $('#ide-file-drag').on('dragover dragleave', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            $(this).toggleClass('hover', e.type === 'dragover');
+        }).on('drop', function(e) {
+            e.preventDefault(); e.stopPropagation();
+            $(this).removeClass('hover');
+            $('#ide-file-upload').prop('files', e.originalEvent.dataTransfer.files);
+            showFile();
+        });
+
+        $L.on('change', function() { save(); saveLang(); setMode(); setFileMode(); loadCode(lid()); });
+        setMode(); setFileMode(); loadCode(lid());
         fitIDE();
 
         // === Results ===
@@ -725,7 +770,7 @@
         }
 
         function runDone() {
-            $('#btn-run').prop('disabled', false).text('▶ Run');
+            $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
             if (runSecret && window.event_dispatcher) {
                 event_dispatcher.off('run_' + runSecret);
             }
@@ -805,13 +850,34 @@
                 error: function(x) {
                     var e = 'Error'; try { e = JSON.parse(x.responseText).error || e; } catch(ex) {}
                     $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">' + esc(e) + '</span></div>');
-                    $('#btn-run').prop('disabled', false).text('▶ Run');
+                    $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
                 }
             });
         });
 
         // === Submit ===
+        function submitFile() {
+            var input = $('#ide-file-upload')[0], file = input.files[0];
+            if (!file) {
+                alert({{ _('Source code/file is missing or redundant. Please try again')|htmltojs }});
+                return;
+            }
+            var file_size_limit = $L.find(':selected').attr('data-file-size');
+            if (file.size > parseInt(file_size_limit) * 1024 * 1024) {
+                alert({{ _('`Maximum file size is ${file_size_limit}MB.`') }});
+                return;
+            }
+            var $f = $('<form method="POST" enctype="multipart/form-data" action="' + SUBM + '">');
+            $f.append($('<input type="hidden" name="csrfmiddlewaretoken">').val(TK));
+            $f.append($('<input type="hidden" name="source">').val(''));
+            $f.append($('<input type="hidden" name="language">').val(lid()));
+            $f.append($('<input type="hidden" name="judge">').val(''));
+            $(input).attr('name', 'submission_file').appendTo($f);
+            $f.appendTo('body').submit();
+        }
+
         $('#btn-sub').click(function() {
+            if (isFileOnly()) { submitFile(); return; }
             var src = ed.getValue();
             if (!src.trim()) return;
             if (src.length > MAX_SOURCE_LEN) {
@@ -1057,7 +1123,8 @@
                     <select id="ide-lang">
                         {% if form %}
                             {% for lang in form.fields.language.queryset %}
-                                <option value="{{ lang.id }}" data-ace="{{ lang.ace }}"
+                                <option value="{{ lang.id }}" data-ace="{{ lang.ace }}" data-fileonly="{{ lang.file_only }}"
+                                        data-ext="{{ lang.extension }}" data-file-size="{{ lang.file_size_limit }}"
                                         {% if default_lang and lang.id == default_lang.id %}selected{% endif %}>
                                     {{ lang.name }}
                                 </option>
@@ -1081,6 +1148,11 @@
                 </div>
                 {% elif request.user.is_authenticated %}
                 <div id="ace-ed"></div>
+                <div id="ide-file-submit" class="ide-file-submit" style="display: none;">
+                    <div class="alert alert-warning">{{ _('You can only submit file for this language.') }}</div>
+                    <input id="ide-file-upload" type="file" style="display: none;">
+                    <label for="ide-file-upload" id="ide-file-drag" class="ide-file-drag"></label>
+                </div>
                 {% else %}
                 <div class="ide-login-overlay">
                     <i class="fa fa-lock"></i>
