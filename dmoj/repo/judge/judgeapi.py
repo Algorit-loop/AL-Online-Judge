@@ -56,8 +56,9 @@ def judge_request(packet, reply=True):
 def judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None):
     from .models import ContestSubmission, Submission, SubmissionTestCase
 
-    updates = {'time': None, 'memory': None, 'points': None, 'result': None, 'case_points': 0, 'case_total': 0,
-               'error': None, 'rejudged_date': timezone.now() if rejudge or batch_rejudge else None, 'status': 'QU'}
+    updates = {'time': None, 'total_time': None, 'memory': None, 'points': None, 'result': None, 'case_points': 0,
+               'case_total': 0, 'error': None, 'rejudged_date': timezone.now() if rejudge or batch_rejudge else None,
+               'status': 'QU'}
     try:
         # This is set proactively; it might get unset in judgecallback's on_grading_begin if the problem doesn't
         # actually have pretests stored on the judge.
@@ -119,8 +120,8 @@ def abort_submission_without_judging(submission, reason):
     there is no new result instead of the old one silently staying."""
     from .models import Submission, SubmissionTestCase
 
-    updates = {'time': None, 'memory': None, 'points': None, 'result': 'AB', 'case_points': 0, 'case_total': 0,
-               'error': reason, 'rejudged_date': timezone.now(), 'status': 'AB'}
+    updates = {'time': None, 'total_time': None, 'memory': None, 'points': None, 'result': 'AB', 'case_points': 0,
+               'case_total': 0, 'error': reason, 'rejudged_date': timezone.now(), 'status': 'AB'}
     # Same guard as judge_submission(): never touch a submission that a judge is working on
     if not Submission.objects.filter(id=submission.id).exclude(status__in=('P', 'G')).update(**updates):
         return False
