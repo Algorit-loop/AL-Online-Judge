@@ -643,7 +643,7 @@
             var on = isFileOnly(), $o = $L.find(':selected');
             $('#ace-ed').toggle(!on);
             $('#ide-file-submit').toggle(on);
-            $('#btn-run').prop('disabled', on || !!rid);
+            $('#btn-run').prop('disabled', on || runBusy);
             if (on) {
                 var file_ext = '.' + $o.attr('data-ext'), file_size_limit = $o.attr('data-file-size');
                 $('#ide-file-upload').val('').attr({accept: file_ext});
@@ -755,7 +755,9 @@
         $(document).on('click', '#rc-bar .rc-t', function() { showCase(+$(this).data('x')); });
 
         // === Run ===
-        var rid = null, runSecret = null;
+        var rid = null, runSecret = null, runBusy = false;  // runBusy: from the Run click until the result or error
+        // While a run is in progress the language cannot be changed either
+        function setRunBusy(busy) { runBusy = busy; $L.prop('disabled', busy); }
 
         function fetchResult() {
             if (!rid) return;
@@ -770,6 +772,7 @@
         }
 
         function runDone() {
+            setRunBusy(false);
             $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
             if (runSecret && window.event_dispatcher) {
                 event_dispatcher.off('run_' + runSecret);
@@ -834,6 +837,7 @@
             }
             // Cancel previous run wsevent
             if (runSecret && window.event_dispatcher) { event_dispatcher.off('run_' + runSecret); }
+            setRunBusy(true);
             $(this).prop('disabled', true).text('Running...');
             $('.bot-tabs .bt[data-t="pnl-res"]').click();
             $('#ide-res').html('<div class="rs-ph">Running...</div>');
@@ -850,6 +854,7 @@
                 error: function(x) {
                     var e = 'Error'; try { e = JSON.parse(x.responseText).error || e; } catch(ex) {}
                     $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">' + esc(e) + '</span></div>');
+                    setRunBusy(false);
                     $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
                 }
             });
