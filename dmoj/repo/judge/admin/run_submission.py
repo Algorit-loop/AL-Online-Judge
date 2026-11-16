@@ -81,8 +81,15 @@ class RunSubmissionAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    # RUN source code is private to its author, so only superusers can see it here
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
     def has_change_permission(self, request, obj=None):
-        return request.user.has_perm('judge.edit_own_problem')
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
     @admin.display(description=_('problem code'), ordering='problem__code')
     def problem_code(self, obj):
