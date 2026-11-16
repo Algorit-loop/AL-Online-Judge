@@ -5,6 +5,7 @@ from threading import RLock
 
 from django.conf import settings
 
+from judge.bridge.judge_handler import SubmissionUnavailable
 from judge.judge_priority import REJUDGE_PRIORITY
 from judge.tasks import on_long_queue
 
@@ -54,7 +55,6 @@ class JudgeList(object):
                     id, problem, language, source, judge_id, banned_judges, is_run, sample_input_files, custom_inputs, is_gensol, gensol_step = node.value
                     if judge.name not in banned_judges and judge.can_judge(problem, language, judge_id):
                         key = self._key(id, is_run, is_gensol)
-                        self.submission_map[key] = judge
                         try:
                             if is_gensol:
                                 judge.gensol_submit(id, problem, language, source, gensol_step)
@@ -62,10 +62,17 @@ class JudgeList(object):
                                 judge.run_submit(id, problem, language, source, sample_input_files, custom_inputs)
                             else:
                                 judge.submit(id, problem, language, source)
+                        except SubmissionUnavailable:
+                            logger.error('Dropping queued submission %d, it is no longer available', id)
+                            self.queue.remove(node)
+                            del self.node_map[key]
+                            # The judge is fine, so let it pick up the next queued submission.
+                            return self._handle_free_judge(judge)
                         except Exception:
                             logger.exception('Failed to dispatch %d (%s, %s) to %s', id, problem, language, judge.name)
                             self.judges.remove(judge)
                             return
+                        self.submission_map[key] = judge
                         kind = 'gensol' if is_gensol else ('run' if is_run else 'submission')
                         logger.info('Dispatched queued %s %d: %s', kind, id, judge.name)
                         self.queue.remove(node)
@@ -225,13 +232,16 @@ class JudgeList(object):
                 # Schedule the submission on the judge reporting least load.
                 judge = min(available, key=lambda judge: (judge.load, random()))
                 logger.info('Dispatched submission %d to: %s', id, judge.name)
-                self.submission_map[key] = judge
                 try:
                     judge.submit(id, problem, language, source)
+                except SubmissionUnavailable:
+                    logger.error('Dropping submission %d, it is no longer available', id)
+                    return
                 except Exception:
                     logger.exception('Failed to dispatch %d (%s, %s) to %s', id, problem, language, judge.name)
                     self.judges.discard(judge)
                     return self.judge(id, problem, language, source, judge_id, priority, banned_judges)
+                self.submission_map[key] = judge
             else:
                 self.node_map[key] = self.queue.insert(
                     (id, problem, language, source, judge_id, banned_judges, False, [], [], False, None),
