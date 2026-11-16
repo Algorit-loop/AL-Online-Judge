@@ -66,6 +66,10 @@ class RunSubmitView(LoginRequiredMixin, View):
         if not prob.allowed_languages.filter(id=language.id).exists():
             return JsonResponse({'error': 'Language not allowed for this problem'}, status=400)
 
+        # File-only languages (Output Only, Scratch...) submit an uploaded file, not source text, so they cannot run
+        if language.file_only:
+            return JsonResponse({'error': 'Run is not available for this language'}, status=400)
+
         # Check sample testcases exist
         sample_cases = list(ProblemTestCase.objects.filter(
             dataset=prob, is_sample=True, type='C',
