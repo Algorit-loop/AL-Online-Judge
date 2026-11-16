@@ -465,7 +465,8 @@
             RURL = '{{ url("run_submit", problem.code) }}',
             POLL = '{{ url("run_poll", 0) }}'.replace('/0', '/'),
             SUBM = '{{ url("problem_submit", problem.code) }}',
-            TK = '{{ csrf_token }}';
+            TK = '{{ csrf_token }}',
+            WS_CLOSED = {{ _('You were disconnected. Refresh to show latest updates.')|htmltojs }};
 
         // === CodeMirror 6 Editor ===
         var CM = window.CM6;
@@ -725,10 +726,23 @@
 
         function runDone() {
             $('#btn-run').prop('disabled', false).text('▶ Run');
-            if (runSecret && typeof event_dispatcher.off === 'function') {
+            if (runSecret && window.event_dispatcher) {
                 event_dispatcher.off('run_' + runSecret);
             }
             rid = null; runSecret = null;
+        }
+
+        // Same as the submission list: without wsevent there are no live updates, so tell the user to refresh
+        function runDisconnected() {
+            $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">' + esc(WS_CLOSED) + '</span></div>');
+            runDone();
+        }
+
+        if (window.event_dispatcher) {
+            event_dispatcher.onwsclose(function (event) {
+                if (event.code == 1001) return;  // navigated away
+                if (rid) runDisconnected();
+            });
         }
 
         function onRunEvent(message) {
@@ -774,7 +788,7 @@
                 }
             }
             // Cancel previous run wsevent
-            if (runSecret) { event_dispatcher.off('run_' + runSecret); }
+            if (runSecret && window.event_dispatcher) { event_dispatcher.off('run_' + runSecret); }
             $(this).prop('disabled', true).text('Running...');
             $('.bot-tabs .bt[data-t="pnl-res"]').click();
             $('#ide-res').html('<div class="rs-ph">Running...</div>');
@@ -785,6 +799,7 @@
                 success: function(r) {
                     rid = r.run_id;
                     runSecret = r.id_secret;
+                    if (!window.event_dispatcher) { runDisconnected(); return; }
                     event_dispatcher.on('run_' + runSecret, onRunEvent);
                 },
                 error: function(x) {
