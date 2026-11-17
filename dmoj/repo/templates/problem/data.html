@@ -3,9 +3,9 @@
 {% block js_media %}
     {{data_form.media.js}}
     {% include "leave-warning.html" %}
-    <script type="text/javascript" src="{{ static('vnoj/jquery-ui/jquery-ui.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static('aloj/jquery-ui/jquery-ui.min.js') }}"></script>
     <script type="text/javascript" src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
-    <script type="text/javascript" src="{{ static('vnoj/jszip/jszip.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static('aloj/jszip/jszip.min.js') }}"></script>
     <script type="text/javascript">
         window.valid_files = {{valid_files_json}}.sort();
         window.testcase_limit = {{testcase_limit}};
@@ -639,7 +639,7 @@
 
 {% block media %}
     {{data_form.media.css}}
-    <link rel="stylesheet" href="{{ static('vnoj/jquery-ui/jquery-ui.min.css') }}">
+    <link rel="stylesheet" href="{{ static('aloj/jquery-ui/jquery-ui.min.css') }}">
     {% if can_generate %}
         <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
         {% include "problem/generate_testcase_style.html" %}

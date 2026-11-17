@@ -8,7 +8,7 @@ const result = await build({
     minify: true,
     sourcemap: false,
     target: ['es2020'],
-    outfile: '../../resources/vnoj/codemirror6/codemirror-ide.min.js',
+    outfile: '../../resources/aloj/codemirror6/codemirror-ide.min.js',
     metafile: true,
     legalComments: 'none',
 });

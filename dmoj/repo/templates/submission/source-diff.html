@@ -2,8 +2,8 @@
 
 {% block js_media %}
     {% compress js %}
-        <script type="text/javascript" src="{{ static('vnoj/jsdiff/diff.min.js') }}"></script>
-        <script type="text/javascript" src="{{ static('vnoj/diff2html/diff2html-ui.min.js') }}"></script>
+        <script type="text/javascript" src="{{ static('aloj/jsdiff/diff.min.js') }}"></script>
+        <script type="text/javascript" src="{{ static('aloj/diff2html/diff2html-ui.min.js') }}"></script>
         <script type="text/javascript">
             $(function () {
                 var first_source = '{{ first_sub.source.source|escapejs }}';
@@ -30,8 +30,8 @@
 {% endblock %}
 
 {% block media %}
-    <link rel="stylesheet" type="text/css" href="{{ static('vnoj/diff2html/github.min.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ static('vnoj/diff2html/diff2html.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ static('aloj/diff2html/github.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ static('aloj/diff2html/diff2html.min.css') }}">
 {% endblock %}
 
 {% block body %}
