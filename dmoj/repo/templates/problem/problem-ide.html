@@ -15,297 +15,347 @@
         }
         #content-body { height: 100%; margin: 0; padding: 0 !important; }
 
-        /* === Variables === */
-        :root {
-            --bd: #e2e2e2; --bg: #fafafa; --bg2: #f5f5f5;
-            --text: #262626; --text2: #595959; --text3: #8c8c8c;
-            --accent: #2d8cf0; --green: #2cbb5d; --red: #ef4743;
-            --orange: #ffa116; --mono: 'Menlo','Consolas','Monaco','Courier New',monospace;
+        /* === Tokens === */
+        .ide {
+            --shell: #eef0f4; --card: #fff; --bd: #dfe3ea; --bd2: #eceff3;
+            --bg: #f7f8fa; --bg2: #f0f2f5;
+            --text: #1f2430; --text2: #555d6b; --text3: #8b93a1;
+            --accent: #2563eb; --accent-bg: #eff4ff; --accent-bd: #c7d7fe;
+            --green: #16a34a; --green-bg: #effaf3; --green-bd: #b7e4c7;
+            --red: #dc2626; --red-bg: #fef3f2; --red-bd: #fbcfcb;
+            --amber: #b45309; --amber-bg: #fff8eb; --amber-bd: #f6dca0;
+            --mute: #4b5563; --mute-bg: #f3f4f6; --mute-bd: #d5d9e0;
+            --mono: 'JetBrains Mono','Menlo','Consolas','Monaco','Courier New',monospace;
+            --r: 8px;
         }
 
-        /* === IDE Layout === */
+        /* === Layout === */
         .ide {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            display: flex; overflow: hidden; background: #eff1f5;
-            padding: 6px; gap: 0; z-index: 1;
+            display: flex; overflow: hidden; background: var(--shell);
+            padding: 8px; gap: 0; z-index: 1; color: var(--text);
+        }
+        .panel-frame {
+            background: var(--card); border-radius: var(--r);
+            border: 1px solid var(--bd); overflow: hidden;
+            box-shadow: 0 1px 2px rgba(16,24,40,.04);
         }
 
         /* Dividers */
         .dv { flex-shrink: 0; background: transparent; position: relative; z-index: 2; }
-        .dv-v { width: 10px; cursor: col-resize; }
-        .dv-h { height: 10px; cursor: row-resize; }
+        .dv-v { width: 8px; cursor: col-resize; }
+        .dv-h { height: 8px; cursor: row-resize; }
         .dv::after {
             content: ''; position: absolute; top: 50%; left: 50%;
             transform: translate(-50%,-50%); border-radius: 2px;
-            background: rgba(0,0,0,.15); transition: background .15s;
+            background: transparent; transition: background .15s;
         }
-        .dv-v::after { width: 3px; height: 32px; }
-        .dv-h::after { height: 3px; width: 32px; }
-        .dv:hover::after { background: var(--accent); }
+        .dv-v::after { width: 3px; height: 40px; }
+        .dv-h::after { height: 3px; width: 40px; }
+        .dv:hover::after, body.dragging .dv::after { background: var(--accent); }
         body.dragging { user-select: none !important; }
         .drag-overlay { position: fixed; inset: 0; z-index: 9999; }
 
-        /* Panel frame (shared) */
-        .panel-frame {
-            background: #fff; border-radius: 10px;
-            border: 1px solid var(--bd); overflow: hidden;
+        /* Thin scrollbars */
+        .ide-L-scroll, .bot-content, .io-b, .tc-ta { scrollbar-width: thin; scrollbar-color: #c9ced6 transparent; }
+        .ide-L-scroll::-webkit-scrollbar, .bot-content::-webkit-scrollbar, .io-b::-webkit-scrollbar { width: 6px; height: 6px; }
+        .ide-L-scroll::-webkit-scrollbar-thumb, .bot-content::-webkit-scrollbar-thumb, .io-b::-webkit-scrollbar-thumb {
+            background: #c9ced6; border-radius: 3px;
         }
 
-        /* === Left Panel === */
+        /* Card header strip (shared by the three cards) */
+        .card-head {
+            display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+            min-height: 42px; padding: 0 10px; box-sizing: border-box;
+            background: var(--bg); border-bottom: 1px solid var(--bd);
+        }
+        .card-ttl { font-size: 13px; font-weight: 600; color: var(--text2); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .card-ttl i { color: var(--accent); }
+        .bar-sp { flex: 1; }
+
+        /* === Left panel === */
         .ide-L {
-            width: 45%; min-width: 280px; overflow-y: auto; overflow-x: hidden;
+            width: 45%; min-width: 280px; display: flex; flex-direction: column;
+            container-type: inline-size; overflow: visible;
         }
-        .ide-L-head {
-            padding: 12px 16px 10px; border-bottom: 1px solid var(--bd);
-        }
-        .ide-L-body {
-            padding: 16px 20px 24px;
-        }
-        /* Thin scrollbar */
-        .ide-L::-webkit-scrollbar, .bot-content::-webkit-scrollbar { width: 5px; }
-        .ide-L::-webkit-scrollbar-thumb, .bot-content::-webkit-scrollbar-thumb {
-            background: #ccc; border-radius: 3px;
-        }
+        .ide-L .card-head { border-radius: var(--r) var(--r) 0 0; }
+        .ide-L-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; border-radius: 0 0 var(--r) var(--r); }
+        .ide-L-top { padding: 16px 20px 12px; border-bottom: 1px solid var(--bd2); }
+        .ide-L-body { padding: 14px 20px 24px; }
 
-        /* Title row */
-        .ide-ttl { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .ide-ttl h3 { margin: 0; font-size: 1.5em; font-weight: 700; color: var(--text); }
-        .ide-ttl .fa { font-size: 1.1em; }
-        .ide-pts {
-            display: inline-block; padding: 1px 8px; border-radius: 10px;
-            font-size: 11px; font-weight: 600; background: #f0f9ff;
-            color: var(--accent); border: 1px solid #cce5ff;
+        /* Quick links in the header strip */
+        .ide-links { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
+        .ide-link {
+            display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 8px;
+            font-size: 12.5px; font-weight: 500; color: var(--text2) !important; text-decoration: none !important;
+            border: 0; background: transparent; box-shadow: none; border-radius: 6px; cursor: pointer; white-space: nowrap;
+            transition: background .12s, color .12s; font-family: inherit;
         }
+        .ide-link:hover, .ide-menu.open > .ide-link { background: var(--bg2); color: var(--text) !important; }
+        .ide-link i { font-size: 13px; color: var(--text3); }
+        .ide-link:hover i { color: var(--accent); }
+        .ide-link .badge {
+            background: var(--red); color: #fff; padding: 0 5px; min-width: 6px; text-align: center;
+            border-radius: 8px; font-size: 10px; line-height: 15px; font-weight: 600;
+        }
+        @container (max-width: 640px) {
+            .ide-link > .lbl { display: none; }
+            .ide-link { padding: 0 9px; }
+            .card-ttl > .lbl { display: none; }
+        }
+        .ide-menu { position: relative; }
+        .ide-menu-list {
+            display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 200px;
+            background: var(--card); border: 1px solid var(--bd); border-radius: var(--r);
+            box-shadow: 0 8px 24px rgba(16,24,40,.12); padding: 4px;
+        }
+        .ide-menu.open .ide-menu-list { display: block; }
+        .ide-menu-list a {
+            display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px;
+            font-size: 13px; color: var(--text) !important; text-decoration: none !important; white-space: nowrap;
+        }
+        .ide-menu-list a:hover { background: var(--bg2); }
+        .ide-menu-list a i { width: 14px; text-align: center; color: var(--text3); }
 
-        /* Info grid */
-        .ide-info { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85em; color: var(--text2); }
-        .ide-info .ii { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
-        .ide-info .ii i { color: #aaa; width: 14px; text-align: center; }
-        .ide-info .ii b { font-weight: 600; color: var(--text); }
-        .ide-ll { font-size: 11px; color: #aaa; padding-left: 2px; margin-top: 2px; }
-        .ide-ll span { margin-right: 8px; }
-        .ide-au { font-size: 0.85em; color: var(--text2); margin-top: 3px; }
-        .ide-au i { color: #bbb; margin-right: 2px; }
+        /* Title + facts */
+        .ide-ttl { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+        .ide-ttl h2 { margin: 0; font-size: 21px; line-height: 1.3; font-weight: 700; color: var(--text); border: 0; padding: 0; }
+        .ide-ttl .fa { font-size: 18px; line-height: 27px; }
+        .ide-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip {
+            display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px;
+            border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap;
+            background: var(--bg2); color: var(--text2); border: 1px solid transparent;
+        }
+        .chip i { font-size: 12px; opacity: .75; }
+        .chip b { font-weight: 600; color: var(--text); }
+        .chip-pts { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-bd); font-weight: 600; }
+        .chip-warn { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-bd); font-weight: 600; }
+        .ide-ll { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+        .ide-ll span { margin-right: 10px; }
+        .ide-meta { margin-top: 10px; font-size: 13px; color: var(--text2); display: flex; flex-direction: column; gap: 3px; }
+        .ide-meta > div > i.fa { color: var(--text3); width: 16px; text-align: center; margin-right: 2px; }
+        .ide-toggle { cursor: pointer; user-select: none; color: var(--text2); }
+        .ide-toggle:hover { color: var(--text); }
+        .ide-toggle .fa { transition: transform .15s; font-size: 10px; }
+        .ide-toggle.open .fa { transform: rotate(90deg); }
+        .ide-L-top .toggled { padding: 1px 0 3px 22px; color: var(--text3); font-size: 12.5px; }
 
-        /* Toggles */
-        .ide-L-head .ide-toggle {
-            font-size: 12px; color: var(--text2); cursor: pointer;
-            padding: 2px 0; user-select: none;
-        }
-        .ide-L-head .ide-toggle:hover { color: var(--text); }
-        .ide-L-head .toggled { font-size: 11px; padding: 1px 0 1px 18px; color: #999; }
-
-        /* Action buttons */
-        .ide-admin-actions {
-            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
-            padding-top: 6px; border-top: 1px solid #f0f0f0;
-        }
-        .ide-admin-btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-            padding: 4px 10px; font-size: 12px; font-weight: 500;
-            background: #f0f5ff; color: #4a6fa5; border: 1px solid #d0dff0;
-            border-radius: 6px; text-decoration: none;
-            transition: all 0.15s ease; white-space: nowrap;
-        }
-        .ide-admin-btn:hover {
-            background: #dce8f8; border-color: #b0c8e8; color: #2d5a8e;
-            transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-        }
-        .ide-admin-btn i { font-size: 12px; }
-        .ide-admin-btn .badge {
-            background: #e74c3c; color: #fff; padding: 0 5px;
-            border-radius: 8px; font-size: 10px; margin-left: 2px;
-        }
-
-        /* === Right Panel === */
-        .ide-R {
-            flex: 1; min-width: 350px; display: flex; flex-direction: column;
-            overflow: hidden; gap: 6px;
-        }
+        /* === Right panel === */
+        .ide-R { flex: 1; min-width: 350px; display: flex; flex-direction: column; overflow: hidden; gap: 0; }
+        .ide-top-frame { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
         /* Toolbar */
-        .ide-bar {
-            display: flex; align-items: center; padding: 6px 12px; gap: 8px;
-            background: var(--bg); border-bottom: 1px solid var(--bd); flex-shrink: 0;
-            border-radius: 10px 10px 0 0;
-        }
+        .ide-bar { gap: 8px; }
         .ide-bar select {
-            padding: 5px 10px; border: 1px solid var(--bd); border-radius: 6px;
-            font-size: 13px; background: #fff; min-width: 130px; outline: none;
+            height: 30px; padding: 0 8px; border: 1px solid var(--bd); border-radius: 6px;
+            font-size: 13px; background: #fff; min-width: 140px; max-width: 220px; outline: none; color: var(--text);
         }
-        .ide-bar select:focus { border-color: var(--accent); }
+        .ide-bar select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+        .ide-bar select:disabled { background: var(--bg2); color: var(--text3); }
         .btn-run, .btn-sub {
-            border: none; padding: 6px 16px; border-radius: 6px;
-            font-size: 13px; font-weight: 600; cursor: pointer; color: #fff;
-            transition: filter .15s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            height: 30px; padding: 0 14px; border-radius: 6px; font-family: inherit;
+            font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+            transition: background .12s, border-color .12s, box-shadow .12s;
         }
-        .btn-run { background: var(--green); }
-        .btn-sub { background: var(--accent); }
-        .btn-run:hover, .btn-sub:hover { filter: brightness(.92); }
-        .btn-run:disabled { opacity: .5; cursor: not-allowed; }
-        .bar-sp { flex: 1; }
-        .save-st { font-size: 11px; color: #bbb; display: flex; align-items: center; gap: 4px; }
-        .save-st .dot {
-            width: 6px; height: 6px; border-radius: 50%; display: inline-block;
-        }
+        .btn-run { background: #fff; color: var(--green) !important; border: 1px solid var(--green-bd); min-width: 84px; }
+        .btn-run:hover:not(:disabled) { background: var(--green-bg); border-color: var(--green); }
+        .btn-sub { background: var(--accent); color: #fff !important; border: 1px solid var(--accent); }
+        .btn-sub:hover { background: #1d4fd8; }
+        .btn-run:focus-visible, .btn-sub:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-bd); }
+        .btn-run:disabled { background: var(--bg2) !important; color: var(--text3) !important; border-color: var(--bd); cursor: not-allowed; opacity: 1; }
+        .save-st { font-size: 12px; color: var(--text3); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .save-st .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
         .dot.saved { background: var(--green); }
-        .dot.unsaved { background: var(--orange); }
-        .dot.saving { background: #17a2b8; }
+        .dot.unsaved { background: #f59e0b; }
+        .dot.saving { background: #0ea5e9; }
 
-        /* Editor + Bottom wrapper */
-        .ide-R { gap: 0; }
-        .ide-top-frame {
-            flex: 1; display: flex; flex-direction: column; overflow: hidden;
-            background: #fff; border-radius: 10px; border: 1px solid var(--bd);
-        }
+        /* Editor */
         .ide-editor { flex: 1; position: relative; min-height: 120px; overflow: hidden; }
         #ace-ed { position: absolute; inset: 0; }
-        .ide-editor .cm-editor {
-            height: 100%; border-radius: 0 0 10px 10px;
-            font-size: 14px;
-        }
+        .ide-editor .cm-editor { height: 100%; font-size: 14px; }
         .ide-editor .cm-editor .cm-scroller { overflow: auto !important; }
         .ide-editor .cm-editor .cm-content { font-family: var(--mono); }
-        .ide-editor .cm-editor .cm-gutters { font-family: var(--mono); border-right: 1px solid var(--bd); }
+        .ide-editor .cm-editor .cm-gutters { font-family: var(--mono); border-right: 1px solid var(--bd2); }
         .ide-editor .cm-editor.cm-focused { outline: none; }
 
         /* File-only languages: upload box instead of the editor, as on the submit page */
-        .ide-file-submit { position: absolute; inset: 0; padding: 12px; overflow: auto; }
+        .ide-file-submit { position: absolute; inset: 0; padding: 16px; overflow: auto; }
         .ide-file-drag {
-            display: block; padding: 1.5em; border: 2px dashed #999; border-radius: 7px;
-            color: #999; text-align: center; cursor: pointer; transition: background .3s, color .3s;
+            display: block; padding: 28px 16px; border: 2px dashed var(--mute-bd); border-radius: var(--r);
+            color: var(--text2); text-align: center; cursor: pointer; line-height: 1.7;
+            transition: background .15s, border-color .15s;
         }
-        .ide-file-drag:hover, .ide-file-drag.hover { background: #ddd; border-style: solid; box-shadow: inset 0 3px 4px #999; }
+        .ide-file-drag:hover, .ide-file-drag.hover { background: var(--accent-bg); border-color: var(--accent); }
 
-        /* === Bottom Panel === */
-        .ide-bot {
-            height: 240px; min-height: 80px; display: flex; flex-direction: column;
-            overflow: hidden; background: #fff; border-radius: 10px;
-            border: 1px solid var(--bd);
+        /* Overlay (guest / no judge) */
+        .ide-login-overlay {
+            position: absolute; inset: 0; z-index: 10;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg); gap: 12px; padding: 16px;
         }
-        .bot-tabs {
-            display: flex; background: var(--bg);
-            border-bottom: 1px solid var(--bd); flex-shrink: 0;
-            border-radius: 10px 10px 0 0;
+        .ide-login-overlay i { font-size: 34px; color: #c3c9d3; }
+        .ide-login-overlay p { font-size: 14px; color: var(--text2); margin: 0; text-align: center; }
+        .ide-login-overlay a {
+            display: inline-block; padding: 8px 22px; border-radius: 6px;
+            background: var(--accent); color: #fff !important; font-weight: 600; font-size: 13px;
+            text-decoration: none !important;
         }
+        .ide-login-overlay a:hover { background: #1d4fd8; }
+
+        /* === Bottom panel === */
+        .ide-bot { height: clamp(240px, 42vh, 460px); min-height: 80px; display: flex; flex-direction: column; flex-shrink: 0; }
+        .ide-bot.collapsed { height: 43px !important; min-height: 0; }
+        .ide-bot.collapsed .bot-content { display: none; }
+        .ide-bot.collapsed .bot-tabs { border-bottom-color: transparent; }
+        .bot-tabs { padding: 0 6px 0 4px; gap: 0; align-items: stretch; }
         .bot-tabs .bt {
-            padding: 7px 18px; cursor: pointer; font-size: 13px; font-weight: 500;
-            color: var(--text3); border-bottom: 2px solid transparent;
+            display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; cursor: pointer;
+            font-size: 13px; font-weight: 500; color: var(--text3);
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
             transition: color .12s, border-color .12s; user-select: none;
         }
         .bot-tabs .bt:hover { color: var(--text); }
         .bot-tabs .bt.on { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
-        .bot-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        .pnl { display: none; padding: 12px 14px; flex-direction: column; flex: 1; min-height: 0; }
+        .bot-tabs .bt i.fa { font-size: 12px; }
+        .bt-dot { width: 8px; height: 8px; border-radius: 50%; display: none; }
+        .bt-dot.g-ok { display: inline-block; background: var(--green); }
+        .bt-dot.g-bad { display: inline-block; background: var(--red); }
+        .bt-dot.g-warn { display: inline-block; background: #f59e0b; }
+        .bt-dot.g-mut, .bt-dot.g-neu { display: inline-block; background: #9ca3af; }
+        .bot-collapse {
+            align-self: center; width: 28px; height: 28px; border: 0; background: transparent; cursor: pointer;
+            border-radius: 6px; color: var(--text3) !important; font-size: 12px; padding: 0;
+        }
+        .bot-collapse:hover { background: var(--bg2); color: var(--text) !important; }
+        .ide-bot.collapsed .bot-collapse i { transform: rotate(180deg); }
+        .bot-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; container-type: inline-size; }
+        .pnl { display: none; padding: 12px 14px 14px; flex-direction: column; flex: 1; min-height: 0; }
         .pnl.on { display: flex; }
 
-        /* === Testcase UI === */
-        .tc-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; flex-shrink: 0; }
-        .tc-t {
-            padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
-            font-weight: 500; background: var(--bg2); border: 1px solid var(--bd);
-            user-select: none; transition: background .12s;
+        /* Case pills (testcase tab + result tab) */
+        .tc-bar, .rc-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; flex-shrink: 0; }
+        .tc-t, .rc-t {
+            display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px;
+            border-radius: 14px; cursor: pointer; font-size: 12.5px; font-weight: 500;
+            background: var(--bg2); color: var(--text2); border: 1px solid transparent;
+            user-select: none; transition: background .12s, color .12s, border-color .12s;
         }
-        .tc-t:hover { background: #eaeaea; }
-        .tc-t.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .tc-x { margin-left: 5px; font-weight: 700; cursor: pointer; font-size: 13px; opacity: .7; }
-        .tc-x:hover { opacity: 1; }
+        .tc-t:hover, .rc-t:hover { background: #e6e9ee; color: var(--text); }
+        .tc-t.on, .rc-t.on { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-bd); font-weight: 600; }
+        .tc-x { font-weight: 700; cursor: pointer; font-size: 15px; line-height: 1; opacity: .55; margin-right: -4px; }
+        .tc-x:hover { opacity: 1; color: var(--red); }
         .tc-add {
-            padding: 5px 12px; border: 1px dashed #bbb; border-radius: 6px;
-            cursor: pointer; font-size: 12px; background: transparent; color: #999;
-            user-select: none; transition: all .12s;
+            display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 12px;
+            border: 1px dashed var(--mute-bd); border-radius: 14px;
+            cursor: pointer; font-size: 12.5px; color: var(--text3); user-select: none; transition: all .12s;
         }
-        .tc-add:hover { background: var(--bg2); border-color: #999; color: #666; }
-        .tc-lbl { font-weight: 600; font-size: 12px; color: var(--text2); margin: 6px 0 2px; flex-shrink: 0; }
-        .tc-lbl:first-child { margin-top: 0; }
-        #tc-body { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 2px; }
+        .tc-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+        .rc-t .sd { width: 7px; height: 7px; border-radius: 50%; background: #c3c9d3; }
+        .rc-t.g-ok .sd { background: var(--green); }
+        .rc-t.g-bad .sd { background: var(--red); }
+        .rc-t.g-warn .sd { background: #f59e0b; }
+        .rc-t.g-mut .sd, .rc-t.g-neu .sd { background: #6b7280; }
+
+        /* Input / output boxes */
+        #tc-body, #rc-det { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; }
+        .io-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @container (min-width: 560px) {
+            .io-grid.c2 { grid-template-columns: 1fr 1fr; }
+            .io-grid.c3 { grid-template-columns: 1fr 1fr; }
+        }
+        @container (min-width: 680px) {
+            .io-grid.c3 { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        .io { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; background: var(--bg); }
+        .io-h {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 5px 10px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+            color: var(--text3); text-transform: uppercase; border-bottom: 1px solid var(--bd2); background: var(--card);
+        }
+        .io-b {
+            margin: 0; padding: 8px 10px; font-family: var(--mono); font-size: 13px; line-height: 1.5;
+            min-height: calc(3em + 16px); max-height: 240px; overflow: auto;
+            white-space: pre-wrap; word-wrap: break-word; color: var(--text); background: transparent; border: 0;
+        }
+        .io.grow { flex: 1; min-height: 110px; }
         .tc-ta {
-            width: 100%; min-height: 48px; flex: 1; font-family: var(--mono); font-size: 13px;
-            border: 1px solid var(--bd); border-radius: 6px; padding: 8px;
-            resize: none; box-sizing: border-box; background: var(--bg);
-            transition: border-color .12s, background .12s; overflow-y: auto;
+            width: 100%; flex: 1; min-height: 64px; font-family: var(--mono); font-size: 13px; line-height: 1.5;
+            border: 0 !important; border-radius: 0; box-shadow: none !important; margin: 0;
+            padding: 8px 10px; resize: none; box-sizing: border-box; background: transparent;
+            color: var(--text); outline: none;
         }
-        .tc-ta:focus { border-color: var(--accent); background: #fff; outline: none; }
-        .tc-counter {
-            font-size: 11px; color: var(--text3); text-align: right;
-            padding: 2px 4px 0; flex-shrink: 0;
-        }
-        .tc-counter-warn { color: var(--orange); }
+        .io:focus-within { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-bg); }
+        .tc-counter { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: none; letter-spacing: 0; }
+        .tc-counter-warn { color: #d97706; }
         .tc-counter-err { color: var(--red); font-weight: 600; }
-        .tc-exp {
-            background: #f7f7f7; border: 1px solid #eaeaea; border-radius: 6px; padding: 8px;
-            font-family: var(--mono); font-size: 13px; flex: 1; min-height: 40px;
-            white-space: pre-wrap; word-wrap: break-word; overflow-y: auto;
-        }
 
-        /* === Result UI === */
-        .rs {
-            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-            padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; flex-shrink: 0;
-        }
-        .rs-st { font-size: 15px; font-weight: 700; }
-        .rs-meta { font-size: 13px; color: var(--text2); display: flex; gap: 16px; flex-wrap: wrap; }
-
-        /* st-* removed: use case-* from submission.scss (loaded globally) */
-        /* bg-* groupings match case-* from submission.scss */
-        .bg-AC { background: #f0fdf4; border: 1px solid #bbf7d0; }
-        .bg-WA { background: #fef2f2; border: 1px solid #fecaca; }
-        .bg-TLE,.bg-SC { background: #f3f4f6; border: 1px solid #d1d5db; }
-        .bg-MLE,.bg-OLE,.bg-RTE,.bg-IR { background: #fffbeb; border: 1px solid #fde68a; }
-        .bg-CE,.bg-IE,.bg-AB { background: #f9fafb; border: 1px solid #e5e7eb; }
-
-        .rc-bar { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
-        .rc-t {
-            padding: 5px 14px; border: 1px solid var(--bd); border-radius: 6px;
-            cursor: pointer; font-size: 12px; font-weight: 600; user-select: none;
-            transition: all .12s;
-        }
-        .rc-t.on { border-width: 2px; }
-        /* rc-* tab colors match case-* from submission.scss */
-        .rc-t.rc-AC { color: green; border-color: green; }
-        .rc-t.rc-AC.on { background: #f0fdf4; }
-        .rc-t.rc-WA { color: #ef1b53; border-color: #ef1b53; }
-        .rc-t.rc-WA.on { background: #fef2f2; }
-        .rc-t.rc-TLE,.rc-t.rc-SC { color: gray; border-color: gray; }
-        .rc-t.rc-TLE.on,.rc-t.rc-SC.on { background: #f3f4f6; }
-        .rc-t.rc-MLE,.rc-t.rc-OLE,.rc-t.rc-RTE,.rc-t.rc-IR { color: orange; border-color: orange; }
-        .rc-t.rc-MLE.on,.rc-t.rc-OLE.on,.rc-t.rc-RTE.on,.rc-t.rc-IR.on { background: #fffbeb; }
-        .rc-t.rc-CE,.rc-t.rc-IE,.rc-t.rc-AB { color: #888; border-color: #aaa; }
-        .rc-t.rc-CE.on,.rc-t.rc-IE.on,.rc-t.rc-AB.on { background: #f9fafb; }
-
-        .rd-meta { font-size: 12px; color: #999; margin-bottom: 6px; display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-        /* #pnl-res is the single scroll container — identical role to .bot-content for Testcase */
+        /* Result banner */
         #pnl-res { overflow-y: auto; }
         #ide-res { display: flex; flex-direction: column; flex: none; }
-        #rc-det { display: flex; flex-direction: column; gap: 6px; }
-        .rd-row { display: flex; flex-direction: column; }
-        .rd-lbl { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 3px; }
-        .rd-val {
-            background: #f7f7f7; border: 1px solid #eaeaea; border-radius: 6px; padding: 8px;
-            font-family: var(--mono); font-size: 13px; line-height: 1.5;
-            min-height: calc(3em + 16px); /* 2 text lines (2 × 1.5em) + top/bottom padding */
-            white-space: pre-wrap; word-wrap: break-word; overflow-y: auto;
+        .rs {
+            display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+            padding: 8px 12px; border-radius: var(--r); margin-bottom: 10px; flex-shrink: 0;
+            border: 1px solid var(--mute-bd); background: var(--mute-bg); color: var(--mute);
         }
+        .rs > i.fa { font-size: 20px; }
+        .rs-st { font-size: 15px; font-weight: 700; }
+        .rs-meta { font-size: 12.5px; color: var(--text2); display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+        .rs-meta .chip { background: rgba(255,255,255,.7); border-color: rgba(0,0,0,.06); }
+        .rs.g-ok { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+        .rs.g-bad { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
+        .rs.g-warn { background: var(--amber-bg); border-color: var(--amber-bd); color: var(--amber); }
+        .rd-meta { font-size: 12.5px; color: var(--text3); display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+        .rd-st { font-weight: 700; font-size: 13px; }
+        .rd-st.g-ok { color: var(--green); } .rd-st.g-bad { color: var(--red); }
+        .rd-st.g-warn { color: var(--amber); } .rd-st.g-mut, .rd-st.g-neu { color: var(--mute); }
         .rs-err pre {
-            background: #fff5f5; border: 1px solid #fecaca; border-radius: 6px; padding: 10px;
-            color: var(--red); font-size: 13px; white-space: pre-wrap; max-height: 180px; overflow-y: auto;
+            background: var(--red-bg); border: 1px solid var(--red-bd); border-radius: var(--r); padding: 10px 12px; margin: 0;
+            color: #b42318; font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+            white-space: pre-wrap; max-height: 260px; overflow-y: auto;
         }
-        .rs-ph { color: #bbb; font-size: 14px; padding: 30px 0; text-align: center; }
+        .rs-ph {
+            color: var(--text3); font-size: 13.5px; padding: 28px 0; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .rs-ph i { font-size: 22px; color: #c3c9d3; }
+        .rs-ph i.fa-spin { color: var(--accent); }
 
-        /* === Login overlay for guests === */
-        .ide-login-overlay {
-            position: absolute; inset: 0; z-index: 10;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: var(--bg); gap: 12px;
+        /* Toast (replaces alert) */
+        .ide-toast {
+            position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); z-index: 10000;
+            max-width: min(520px, calc(100vw - 32px)); padding: 10px 16px; border-radius: var(--r);
+            background: #1f2430; color: #fff; font-size: 13px; line-height: 1.45;
+            box-shadow: 0 8px 24px rgba(16,24,40,.25); opacity: 0; pointer-events: none;
+            transition: opacity .18s, transform .18s; display: flex; align-items: center; gap: 8px;
         }
-        .ide-login-overlay i { font-size: 36px; color: #ccc; }
-        .ide-login-overlay p { font-size: 14px; color: var(--text2); margin: 0; text-align: center; }
-        .ide-login-overlay a {
-            display: inline-block; padding: 8px 24px; border-radius: 6px;
-            background: var(--accent); color: #fff; font-weight: 600; font-size: 13px;
-            text-decoration: none; transition: filter .15s;
+        .ide-toast.show { opacity: 1; transform: translate(-50%, 0); }
+        .ide-toast i { color: #fbbf24; }
+
+        /* === Narrow screens: one panel at a time === */
+        .ide-mnav { display: none; }
+        @media (max-width: 900px) {
+            .ide { flex-direction: column; padding: 6px; }
+            .ide-mnav {
+                display: flex; flex-shrink: 0; gap: 4px; padding: 3px; margin-bottom: 6px;
+                background: #e2e5ea; border-radius: var(--r);
+            }
+            .ide-mnav button {
+                flex: 1; height: 30px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+                font-size: 13px; font-weight: 600; color: var(--text2) !important; font-family: inherit;
+            }
+            .ide-mnav button.on { background: #fff; color: var(--text) !important; box-shadow: 0 1px 2px rgba(16,24,40,.12); }
+            .dv-v { display: none; }
+            .ide-L { width: auto !important; min-width: 0; flex: 1; min-height: 0; }
+            .ide-R { min-width: 0; min-height: 0; }
+            .ide.m-desc .ide-R, .ide.m-code .ide-L { display: none; }
+            .save-st #sv-txt { display: none; }
+            .ide-bar select { min-width: 0; flex: 1 1 90px; }
         }
-        .ide-login-overlay a:hover { filter: brightness(.9); }
+        @media (prefers-reduced-motion: reduce) {
+            .ide *, .ide-toast { transition: none !important; }
+        }
     </style>
 {% endblock %}
 
@@ -368,18 +418,55 @@
             $ov = $('<div class="drag-overlay">').css('cursor', t === 'v' ? 'col-resize' : 'row-resize').appendTo('body');
             $('body').addClass('dragging').css('cursor', t === 'v' ? 'col-resize' : 'row-resize');
         }
-        $('.dv-v').on('mousedown', function(e) { startDrag('v', e); });
-        $(document).on('mousedown', '.dv-h', function(e) { startDrag('h', e); });
+        // Panel sizes are remembered per browser: left width as a share of the window, bottom height in px
+        var LAYOUT_KEY = 'ide:layout', layout = {};
+        try { layout = JSON.parse(localStorage.getItem(LAYOUT_KEY)) || {}; } catch (e) { layout = {}; }
+        function saveLayout() { try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch (e) {} }
+        function setLeft(w, r) {
+            w = Math.max(280, Math.min(r.width - 400, w));
+            document.querySelector('.ide-L').style.width = w + 'px';
+            return w;
+        }
+        function setBottom(h, r) {
+            h = Math.max(80, Math.min(r.height - 180, h));
+            document.querySelector('.ide-bot').style.height = h + 'px';
+            return h;
+        }
+        function applyLayout() {
+            var r = document.querySelector('.ide').getBoundingClientRect();
+            if (layout.left > 0 && layout.left < 1) setLeft(layout.left * r.width, r);
+            if (layout.bottom > 0) setBottom(layout.bottom, r);
+            $('.ide-bot').toggleClass('collapsed', !!layout.collapsed);
+        }
+        applyLayout();
+        $(window).on('resize', applyLayout);
+
+        // A second press within 350ms is a double click: go back to the default size instead of dragging.
+        // (dblclick itself never fires on the divider, the drag overlay takes the mouseup.)
+        var lastDown = {v: 0, h: 0};
+        function downDivider(t, e) {
+            var now = Date.now();
+            if (now - lastDown[t] < 350) {
+                lastDown[t] = 0; e.preventDefault();
+                if (t === 'v') { delete layout.left; document.querySelector('.ide-L').style.width = ''; }
+                else { delete layout.bottom; document.querySelector('.ide-bot').style.height = ''; }
+                saveLayout();
+                if (window._ed) window._ed.resize();
+                return;
+            }
+            lastDown[t] = now;
+            startDrag(t, e);
+        }
+        $('.dv-v').on('mousedown', function(e) { downDivider('v', e); });
+        $(document).on('mousedown', '.dv-h', function(e) { downDivider('h', e); });
         $(document).on('mousemove', function(e) {
             if (!dragT) return;
+            var r = document.querySelector('.ide').getBoundingClientRect();
             if (dragT === 'v') {
-                var r = document.querySelector('.ide').getBoundingClientRect();
-                var w = Math.max(250, Math.min(r.width - 400, e.clientX - r.left - 6));
-                document.querySelector('.ide-L').style.width = w + 'px';
+                layout.left = setLeft(e.clientX - r.left - 8, r) / r.width;
             } else {
-                var r = document.querySelector('.ide-R').getBoundingClientRect();
-                var h = Math.max(80, Math.min(r.height - 180, r.bottom - e.clientY));
-                document.querySelector('.ide-bot').style.height = h + 'px';
+                setCollapsed(false);
+                layout.bottom = setBottom(r.bottom - 8 - e.clientY, r);
             }
             if (window._ed) window._ed.resize();
         });
@@ -388,18 +475,61 @@
             dragT = null;
             if ($ov) { $ov.remove(); $ov = null; }
             $('body').removeClass('dragging').css('cursor', '');
+            saveLayout();
             if (window._ed) window._ed.resize();
         });
+
+        // === Shared: Collapse the bottom panel ===
+        function setCollapsed(on) {
+            if (!!layout.collapsed === on) return;
+            layout.collapsed = on;
+            $('.ide-bot').toggleClass('collapsed', on);
+            saveLayout();
+            if (window._ed) window._ed.resize();
+        }
+        $('#bot-collapse').click(function() { setCollapsed(!layout.collapsed); });
+
+        // === Shared: Narrow screens show one panel at a time ===
+        function setView(v) {
+            $('.ide').removeClass('m-desc m-code').addClass('m-' + v);
+            $('.ide-mnav button').each(function() { $(this).toggleClass('on', $(this).data('v') === v); });
+            if (window._ed) window._ed.resize();
+        }
+        $('.ide-mnav button').click(function() { setView($(this).data('v')); });
+
+        // === Shared: Manage menu ===
+        $('#ide-manage > button').click(function(e) {
+            e.stopPropagation();
+            var open = !$('#ide-manage').hasClass('open');
+            $('#ide-manage').toggleClass('open', open);
+            $(this).attr('aria-expanded', open ? 'true' : 'false');
+        });
+        $(document).on('click keydown', function(e) {
+            if (e.type === 'keydown' && e.key !== 'Escape') return;
+            $('#ide-manage').removeClass('open').children('button').attr('aria-expanded', 'false');
+        });
+
+        // === Shared: Toast for validation messages ===
+        var toastT = null;
+        function notify(msg) {
+            var $t = $('#ide-toast');
+            $t.find('span').text(msg);
+            $t.addClass('show');
+            if (toastT) clearTimeout(toastT);
+            toastT = setTimeout(function() { $t.removeClass('show'); }, 4500);
+        }
+        $('#ide-toast').click(function() { $(this).removeClass('show'); });
 
         // === Shared: Bottom Tabs ===
         $('.bot-tabs .bt').click(function() {
             var t = $(this).data('t');
             $('.bot-tabs .bt').removeClass('on'); $(this).addClass('on');
             $('.pnl').removeClass('on'); $('#' + t).addClass('on');
+            setCollapsed(false);
         });
 
         // === Shared: Toggles ===
-        $(document).on('click', '.ide-L-head .ide-toggle', function() {
+        $(document).on('click', '.ide-L .ide-toggle', function() {
             $(this).toggleClass('open closed');
             $(this).next('.toggled').slideToggle(150);
         });
@@ -407,6 +537,9 @@
         // === Shared: Testcases ===
         var tcs = [], ai = 0;
         function esc(s) { return $('<span>').text(s || '').html(); }
+        function ioBox(label, text) {
+            return '<div class="io"><div class="io-h"><span>' + label + '</span></div><pre class="io-b">' + esc(text) + '</pre></div>';
+        }
         function addTC(inp, exp, sam) { tcs.push({i: inp||'', e: exp||'', s: !!sam}); rTabs(); swTC(tcs.length-1); }
         function rmTC(x) { if (tcs.length<=1) return; tcs.splice(x,1); if (ai>=tcs.length) ai=tcs.length-1; rTabs(); rTC(); }
         function swTC(x) { svTC(); ai = x; rTabs(); rTC(); }
@@ -425,19 +558,21 @@
                 $b.append($t);
             }
             if (AUTHED) {
-                $b.append('<span class="tc-add">+ Add</span>');
+                $b.append('<span class="tc-add"><i class="fa fa-plus"></i>Add</span>');
             }
         }
         function rTC() {
-            var tc = tcs[ai], h = '<div class="tc-lbl">Input</div>';
+            var tc = tcs[ai], h;
             if (tc.s) {
                 // Sample: read-only display for both guests and authed
-                h += '<div class="tc-exp">' + esc(tc.i) + '</div>';
+                h = '<div class="io-grid' + (tc.e ? ' c2' : '') + '">' + ioBox('Input', tc.i);
+                if (tc.e) h += ioBox('Expected Output', tc.e);
+                h += '</div>';
             } else {
-                h += '<textarea id="tc-in" class="tc-ta" placeholder="Enter input..." maxlength="' + MAX_INPUT_LEN + '">' + esc(tc.i) + '</textarea>';
-                h += '<div id="tc-in-counter" class="tc-counter">' + (tc.i || '').length + ' / ' + MAX_INPUT_LEN + '</div>';
+                h = '<div class="io grow"><div class="io-h"><span>Input</span>' +
+                    '<span id="tc-in-counter" class="tc-counter">' + (tc.i || '').length + ' / ' + MAX_INPUT_LEN + '</span></div>' +
+                    '<textarea id="tc-in" class="tc-ta" placeholder="Enter input..." spellcheck="false" maxlength="' + MAX_INPUT_LEN + '">' + esc(tc.i) + '</textarea></div>';
             }
-            if (tc.s && tc.e) h += '<div class="tc-lbl">Expected Output</div><div class="tc-exp">' + esc(tc.e) + '</div>';
             $('#tc-body').html(h);
         }
         $(document).on('input', '#tc-in', function() {
@@ -453,7 +588,7 @@
             if (!AUTHED) { window.location.href = LOGIN_URL; return; }
             var customCount = 0;
             for (var k = 0; k < tcs.length; k++) { if (!tcs[k].s) customCount++; }
-            if (customCount >= MAX_CUSTOM_TC) { alert('Maximum ' + MAX_CUSTOM_TC + ' custom testcases'); return; }
+            if (customCount >= MAX_CUSTOM_TC) { notify('Maximum ' + MAX_CUSTOM_TC + ' custom testcases'); return; }
             svTC(); addTC('','',false);
         });
 
@@ -685,24 +820,47 @@
         function ft(t) { return t != null ? t.toFixed(3) + 's' : '—'; }
         function fm(m) { return m != null ? (m/1024).toFixed(2) + ' MB' : '—'; }
 
+        // Colour group of a verdict: ok / bad / warn (runtime problems) / mut (stopped early) / neu (no verdict)
+        function grp(s) {
+            return s === 'AC' ? 'ok' : s === 'WA' ? 'bad' : (s === 'TLE' || s === 'SC') ? 'mut' :
+                   (s === 'MLE' || s === 'OLE' || s === 'RTE' || s === 'IR') ? 'warn' : 'neu';
+        }
+        var GICON = {ok: 'fa-check-circle', bad: 'fa-times-circle', warn: 'fa-exclamation-circle',
+                     mut: 'fa-clock-o', neu: 'fa-exclamation-triangle'};
+        function banner(s, text, meta) {
+            var g = grp(s);
+            return '<div class="rs g-' + g + '"><i class="fa ' + GICON[g] + '"></i><span class="rs-st">' + text + '</span>' +
+                   (meta ? '<span class="rs-meta">' + meta + '</span>' : '') + '</div>';
+        }
+        function setResDot(s) { $('#res-dot').attr('class', 'bt-dot' + (s ? ' g-' + grp(s) : '')); }
+        // A message instead of a result: failed request, lost connection...
+        function showMsg(text) { setResDot('IE'); $('#ide-res').html(banner('IE', esc(text))); }
+        function showWait(text) {
+            setResDot(null);
+            $('#ide-res').html('<div class="rs-ph"><i class="fa fa-circle-o-notch fa-spin"></i>' + text + '</div>');
+        }
+        function setRunBtn(busy) {
+            $('#btn-run').prop('disabled', busy || isFileOnly()).html(busy ?
+                '<i class="fa fa-circle-o-notch fa-spin"></i><span>Running...</span>' : '<i class="fa fa-play"></i><span>Run</span>');
+        }
+
         function showRes(d) {
             LR = d; ari = 0; var $p = $('#ide-res');
             if (d.status !== 'done') {
                 var r = d.status;
-                var h = '<div class="rs bg-' + r + '"><span class="rs-st case-' + r + '">' + (ST[r]||r) + '</span></div>';
+                var h = banner(r, ST[r]||esc(r));
                 if (d.error) h += '<div class="rs-err"><pre>' + esc(stripAnsi(d.error)) + '</pre></div>';
+                setResDot(r);
                 $p.html(h); return;
             }
             var r = d.result;
             var passed = d.passed;
             var total = d.total_cases;
-            var h = '<div class="rs bg-' + r + '">';
-            h += '<span class="rs-st case-' + r + '">' + (ST[r]||r) + '</span>';
-            h += '<span class="rs-meta">';
-            if (total > 0) h += '<span>' + passed + '/' + total + ' samples passed</span>';
-            if (d.time != null) h += '<span>' + ft(d.time) + '</span>';
-            if (d.memory != null) h += '<span>' + fm(d.memory) + '</span>';
-            h += '</span></div>';
+            var meta = '';
+            if (total > 0) meta += '<span class="chip"><b>' + passed + '/' + total + '</b> samples passed</span>';
+            if (d.time != null) meta += '<span class="chip"><i class="fa fa-clock-o"></i>' + ft(d.time) + '</span>';
+            if (d.memory != null) meta += '<span class="chip"><i class="fa fa-server"></i>' + fm(d.memory) + '</span>';
+            var h = banner(r, ST[r]||esc(r), meta);
             if (d.testcases && d.testcases.length) {
                 h += '<div id="rc-bar" class="rc-bar">';
                 for (var j = 0; j < d.testcases.length; j++) {
@@ -710,11 +868,12 @@
                     var s = d.testcases[j].status || 'IE';
                     var isRuntimeErr = !isSam && s !== 'AC' && s !== 'WA' && s !== 'SC';
                     var lbl = isSam ? 'Sample ' + (j+1) : 'Custom ' + (j-total+1);
-                    h += '<span class="rc-t' + ((isSam || isRuntimeErr) ? ' rc-' + s : '') + (j===0?' on':'') + '" data-x="' + j + '">' + lbl + '</span>';
+                    h += '<span class="rc-t' + ((isSam || isRuntimeErr) ? ' g-' + grp(s) : '') + (j===0?' on':'') + '" data-x="' + j + '" title="' + ((isSam || isRuntimeErr) ? (ST[s]||esc(s)) : '') + '"><span class="sd"></span>' + lbl + '</span>';
                 }
                 h += '</div><div id="rc-det"></div>';
             }
             if (d.error) h += '<div class="rs-err"><pre>' + esc(stripAnsi(d.error)) + '</pre></div>';
+            setResDot(r);
             $p.html(h);
             if (d.testcases && d.testcases.length) showCase(0);
         }
@@ -729,27 +888,22 @@
             $('#rc-bar .rc-t[data-x="'+x+'"]').addClass('on');
             var tc = LR.testcases[x], s = tc.status || 'IE';
             var isSam = x < LR.total_cases;
-            var h = '';
+            var h = '', boxes = [];
+            var time = '<span><i class="fa fa-clock-o"></i> ' + ft(tc.time) + '</span><span><i class="fa fa-server"></i> ' + fm(tc.memory) + '</span>';
+            var st = '<span class="rd-st g-' + grp(s) + '">' + (ST[s]||esc(s)) + '</span>';
             if (isSam) {
-                h += '<div class="rd-meta">';
-                h += '<span class="rs-st case-' + s + '" style="font-size:13px">' + (ST[s]||s) + '</span>';
-                h += '<span>' + ft(tc.time) + '</span><span>' + fm(tc.memory) + '</span></div>';
-                if (x < tcs.length && tcs[x])
-                    h += '<div class="rd-row"><div class="rd-lbl">Input</div><div class="rd-val">' + esc(tcs[x].i) + '</div></div>';
-                h += '<div class="rd-row"><div class="rd-lbl">Output</div><div class="rd-val">' + esc(truncOut(tc)) + '</div></div>';
-                if (tcs[x] && tcs[x].e)
-                    h += '<div class="rd-row"><div class="rd-lbl">Expected</div><div class="rd-val">' + esc(tcs[x].e) + '</div></div>';
-                if (tc.feedback)
-                    h += '<div class="rd-row"><div class="rd-lbl">Feedback</div><div class="rd-val">' + esc(tc.feedback) + '</div></div>';
+                h += '<div class="rd-meta">' + st + time + '</div>';
+                if (x < tcs.length && tcs[x]) boxes.push(ioBox('Input', tcs[x].i));
+                boxes.push(ioBox('Output', truncOut(tc)));
+                if (tcs[x] && tcs[x].e) boxes.push(ioBox('Expected', tcs[x].e));
             } else {
                 var isNormal = s === 'AC' || s === 'WA' || s === 'SC';
-                h += '<div class="rd-meta">';
-                if (!isNormal) h += '<span class="rs-st case-' + s + '" style="font-size:13px">' + (ST[s]||s) + '</span>';
-                h += '<span>' + ft(tc.time) + '</span><span>' + fm(tc.memory) + '</span></div>';
-                if (x < tcs.length && tcs[x])
-                    h += '<div class="rd-row"><div class="rd-lbl">Input</div><div class="rd-val">' + esc(tcs[x].i) + '</div></div>';
-                h += '<div class="rd-row"><div class="rd-lbl">Output</div><div class="rd-val">' + esc(truncOut(tc)) + '</div></div>';
+                h += '<div class="rd-meta">' + (isNormal ? '' : st) + time + '</div>';
+                if (x < tcs.length && tcs[x]) boxes.push(ioBox('Input', tcs[x].i));
+                boxes.push(ioBox('Output', truncOut(tc)));
             }
+            h += '<div class="io-grid c' + boxes.length + '">' + boxes.join('') + '</div>';
+            if (isSam && tc.feedback) h += ioBox('Feedback', tc.feedback);
             $('#rc-det').html(h);
         }
         $(document).on('click', '#rc-bar .rc-t', function() { showCase(+$(this).data('x')); });
@@ -766,14 +920,14 @@
                 showRes(d);
                 runDone();
             }).fail(function() {
-                $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">Poll failed</span></div>');
+                showMsg('Poll failed');
                 runDone();
             });
         }
 
         function runDone() {
             setRunBusy(false);
-            $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
+            setRunBtn(false);
             if (runSecret && window.event_dispatcher) {
                 event_dispatcher.off('run_' + runSecret);
             }
@@ -782,7 +936,7 @@
 
         // Same as the submission list: without wsevent there are no live updates, so tell the user to refresh
         function runDisconnected() {
-            $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">' + esc(WS_CLOSED) + '</span></div>');
+            showMsg(WS_CLOSED);
             runDone();
         }
 
@@ -796,10 +950,10 @@
         function onRunEvent(message) {
             switch (message.type) {
                 case 'processing':
-                    $('#ide-res').html('<div class="rs-ph">Processing...</div>');
+                    showWait('Processing...');
                     break;
                 case 'grading-begin':
-                    $('#ide-res').html('<div class="rs-ph">Grading...</div>');
+                    showWait('Grading...');
                     break;
                 case 'test-case':
                     // Progress — keep showing "Grading..."
@@ -819,7 +973,7 @@
             var src = ed.getValue(), l = lid();
             if (!src.trim()) return;
             if (src.length > MAX_SOURCE_LEN) {
-                alert('Source code too long (max ' + MAX_SOURCE_LEN + ' characters, current: ' + src.length + ')');
+                notify('Source code too long (max ' + MAX_SOURCE_LEN + ' characters, current: ' + src.length + ')');
                 return;
             }
             if (_t) { clearTimeout(_t); _t = null; } save();
@@ -829,7 +983,7 @@
                 if (!tcs[k].s) {
                     var inp = tcs[k].i || '';
                     if (inp.length > MAX_INPUT_LEN) {
-                        alert('Custom input ' + (ci.length + 1) + ' too long (max ' + MAX_INPUT_LEN + ' characters, current: ' + inp.length + ')');
+                        notify('Custom input ' + (ci.length + 1) + ' too long (max ' + MAX_INPUT_LEN + ' characters, current: ' + inp.length + ')');
                         return;
                     }
                     ci.push(inp);
@@ -838,9 +992,9 @@
             // Cancel previous run wsevent
             if (runSecret && window.event_dispatcher) { event_dispatcher.off('run_' + runSecret); }
             setRunBusy(true);
-            $(this).prop('disabled', true).text('Running...');
+            setRunBtn(true);
             $('.bot-tabs .bt[data-t="pnl-res"]').click();
-            $('#ide-res').html('<div class="rs-ph">Running...</div>');
+            showWait('Running...');
             $.ajax({
                 url: RURL, method: 'POST', contentType: 'application/json',
                 headers: {'X-CSRFToken': TK},
@@ -853,9 +1007,9 @@
                 },
                 error: function(x) {
                     var e = 'Error'; try { e = JSON.parse(x.responseText).error || e; } catch(ex) {}
-                    $('#ide-res').html('<div class="rs bg-IE"><span class="rs-st case-IE">' + esc(e) + '</span></div>');
+                    showMsg(e);
                     setRunBusy(false);
-                    $('#btn-run').prop('disabled', isFileOnly()).text('▶ Run');
+                    setRunBtn(false);
                 }
             });
         });
@@ -864,12 +1018,12 @@
         function submitFile() {
             var input = $('#ide-file-upload')[0], file = input.files[0];
             if (!file) {
-                alert({{ _('Source code/file is missing or redundant. Please try again')|htmltojs }});
+                notify({{ _('Source code/file is missing or redundant. Please try again')|htmltojs }});
                 return;
             }
             var file_size_limit = $L.find(':selected').attr('data-file-size');
             if (file.size > parseInt(file_size_limit) * 1024 * 1024) {
-                alert({{ _('`Maximum file size is ${file_size_limit}MB.`') }});
+                notify({{ _('`Maximum file size is ${file_size_limit}MB.`') }});
                 return;
             }
             var $f = $('<form method="POST" enctype="multipart/form-data" action="' + SUBM + '">');
@@ -886,7 +1040,7 @@
             var src = ed.getValue();
             if (!src.trim()) return;
             if (src.length > MAX_SOURCE_LEN) {
-                alert('Source code too long (max ' + MAX_SOURCE_LEN + ' characters, current: ' + src.length + ')');
+                notify('Source code too long (max ' + MAX_SOURCE_LEN + ' characters, current: ' + src.length + ')');
                 return;
             }
             if (_t) { clearTimeout(_t); _t = null; } save();
@@ -917,202 +1071,224 @@
 {% block header %}{% endblock %}
 
 {% block body %}
-<div class="ide">
+<div class="ide m-desc">
+    {# Narrow screens: switch between the statement and the editor #}
+    <div class="ide-mnav">
+        <button type="button" class="on" data-v="desc">{{ _('Statement') }}</button>
+        <button type="button" data-v="code">{{ _('Code') }}</button>
+    </div>
+
     {# ===== LEFT ===== #}
     <div class="ide-L panel-frame">
-        <div class="ide-L-head">
-            {# Title #}
-            <div class="ide-ttl">
-                {% if request.user.is_authenticated %}
-                    {% if problem.id in completed_problem_ids %}
-                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}"><i class="solved-problem-color fa fa-check-circle"></i></a>
-                    {% elif problem.id in attempted_problems %}
-                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}"><i class="attempted-problem-color fa fa-frown-o"></i></a>
-                    {% endif %}
-                {% endif %}
-                <h3>{{ title }}</h3>
-                <span class="ide-pts">
-                    {% if contest_problem %}
-                        {{ contest_problem.points }}{% if contest_problem.partial %} (partial){% endif %}
-                    {% else %}
-                        {{ problem.points|floatformat(2) }} pts
-                    {% endif %}
-                </span>
-                {% if has_pdf_render %}
-                    <a href="{{ url('problem_pdf', problem.code) }}" style="margin-left:auto;font-size:12px;color:var(--accent)"><i class="fa fa-file-pdf-o"></i> PDF</a>
-                {% endif %}
-            </div>
-
-            {# Info grid #}
-            <div class="ide-info">
-                <span class="ii"><i class="fa fa-clock-o"></i> <b>{{ problem.time_limit }}s</b></span>
-                <span class="ii"><i class="fa fa-server"></i> <b>{{ problem.memory_limit|kbsimpleformat }}</b></span>
-                {% if problem.io_method.method == 'standard' %}
-                    <span class="ii"><i class="fa fa-keyboard-o"></i> stdin / stdout</span>
-                {% elif problem.io_method.method == 'file' %}
-                    <span class="ii"><i class="fa fa-file-o"></i> {{ problem.io_method.input }} / {{ problem.io_method.output }}</span>
-                {% endif %}
-            </div>
-            {% if problem.language_time_limit %}
-                <div class="ide-ll">{% for n, l in problem.language_time_limit %}<span>{{ n }}: {{ l }}s</span>{% endfor %}</div>
-            {% endif %}
-            {% if problem.language_memory_limit %}
-                <div class="ide-ll">{% for n, l in problem.language_memory_limit %}<span>{{ n }}: {{ l|kbsimpleformat }}</span>{% endfor %}</div>
-            {% endif %}
-
-            {# Authors / Source #}
-            {% if not contest_problem or not contest_problem.contest.hide_problem_authors %}
-                {% cache 86400 'problem_authors' problem.id LANGUAGE_CODE %}
-                {% with authors=problem.authors.all() %}
-                    {% if authors %}
-                        <div class="ide-au"><i class="fa fa-pencil-square-o"></i>
-                            {% trans trimmed count=authors|length %}Author:{% pluralize count %}Authors:{% endtrans %}
-                            {{ link_users(authors) }}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-                {% if problem.suggester %}
-                    <div class="ide-au"><i class="fa fa-pencil-square-o"></i> {{ _("Suggester:") }} {{ link_user(problem.suggester) }}</div>
-                {% endif %}
-                {% endcache %}
-            {% endif %}
-            {% if problem.source %}
-                <div class="ide-au"><i class="fa fa-book"></i> {{ _('Source:') }} {{ problem.source }}</div>
-            {% endif %}
-
-            {# Toggles #}
-            {% if not contest_problem or not contest_problem.contest.hide_problem_tags %}
-                <div class="ide-toggle closed unselectable" style="margin-top:4px">
-                    <i class="fa fa-chevron-right fa-fw"></i>
-                    {% trans trimmed count=problem.types_list|length %}Problem type{% pluralize count %}Problem types{% endtrans %}
-                </div>
-                <div style="display:none" class="toggled">{{ problem.types_list|join(", ") }}</div>
-            {% endif %}
-            {% if show_languages %}
-                <div class="ide-toggle closed unselectable">
-                    <i class="fa fa-chevron-right fa-fw"></i>{{ _('Allowed languages') }}
-                </div>
-                <div style="display:none" class="toggled">
-                    {% with usable=problem.usable_common_names, langs=problem.languages_list() %}
-                        {% for lang in langs %}
-                            {%- if lang in usable %}{{ lang }}{% else %}<s title="{{ _('No %(lang)s judge online', lang=lang) }}">{{ lang }}</s>{% endif -%}
-                            {% if not loop.last %}, {% endif %}
-                        {% endfor %}
-                    {% endwith %}
-                </div>
-            {% endif %}
-            {% if problem.is_editable_by(request.user) and available_judges %}
-                <div class="ide-au" style="margin-top:3px"><i class="fa fa-database"></i>
-                    {% trans trimmed count=available_judges|length %}Judge:{% pluralize count %}Judges:{% endtrans %}
-                    {% for j in available_judges %}{{ j.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-                </div>
-            {% endif %}
-
-            {# Submission limit (contest) #}
-            {% if request.user.is_authenticated and request.in_contest and submission_limit %}
-                <div class="ide-au" style="margin-top:3px;color:var(--orange)">
-                    <i class="fa fa-exclamation-triangle"></i>
-                    {% if submissions_left is defined and submissions_left > 0 %}
-                        {{ submissions_left }} {{ _('submissions left') }}
-                    {% elif submissions_left is defined %}
-                        {{ _('0 submissions left') }}
-                    {% endif %}
-                </div>
-            {% endif %}
-
+        <div class="card-head">
+            <span class="card-ttl"><i class="fa fa-file-text-o"></i><span class="lbl">{{ _('Statement') }}</span></span>
+            <span class="bar-sp"></span>
             {# Links #}
-            <div class="ide-admin-actions">
+            <div class="ide-links">
                 {% if request.in_contest and contest_problem %}
                     {% set contest = contest_problem.contest %}
-                    <a href="{{ url('contest_user_submissions', contest.key, request.user.username, problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-user"></i> {{ _('My submissions') }}
+                    <a href="{{ url('contest_user_submissions', contest.key, request.user.username, problem.code) }}" class="ide-link" title="{{ _('My submissions') }}">
+                        <i class="fa fa-user"></i><span class="lbl">{{ _('My submissions') }}</span>
                     </a>
                     {% if contest.can_see_full_submission_list(request.user) %}
-                        <a href="{{ url('chronological_submissions', problem.code) }}" class="ide-admin-btn">
-                            <i class="fa fa-list"></i> {{ _('All submissions') }}
+                        <a href="{{ url('chronological_submissions', problem.code) }}" class="ide-link" title="{{ _('All submissions') }}">
+                            <i class="fa fa-list"></i><span class="lbl">{{ _('All submissions') }}</span>
                         </a>
-                        <a href="{{ url('contest_ranked_submissions', contest.key, problem.code) }}" class="ide-admin-btn">
-                            <i class="fa fa-trophy"></i> {{ _('Best submissions') }}
+                        <a href="{{ url('contest_ranked_submissions', contest.key, problem.code) }}" class="ide-link" title="{{ _('Best submissions') }}">
+                            <i class="fa fa-trophy"></i><span class="lbl">{{ _('Best submissions') }}</span>
                         </a>
                     {% endif %}
                 {% else %}
                     {% if request.user.is_authenticated and has_submissions %}
-                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}" class="ide-admin-btn">
-                            <i class="fa fa-user"></i> {{ _('My submissions') }}
+                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}" class="ide-link" title="{{ _('My submissions') }}">
+                            <i class="fa fa-user"></i><span class="lbl">{{ _('My submissions') }}</span>
                         </a>
                     {% endif %}
-                    <a href="{{ url('chronological_submissions', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-list"></i> {{ _('All submissions') }}
+                    <a href="{{ url('chronological_submissions', problem.code) }}" class="ide-link" title="{{ _('All submissions') }}">
+                        <i class="fa fa-list"></i><span class="lbl">{{ _('All submissions') }}</span>
                     </a>
-                    <a href="{{ url('ranked_submissions', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-trophy"></i> {{ _('Best submissions') }}
+                    <a href="{{ url('ranked_submissions', problem.code) }}" class="ide-link" title="{{ _('Best submissions') }}">
+                        <i class="fa fa-trophy"></i><span class="lbl">{{ _('Best submissions') }}</span>
                     </a>
                 {% endif %}
                 {% if (editorial and editorial.is_accessible_by(request.user)) and not request.in_contest %}
-                    <a href="{{ url('problem_editorial', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-book"></i> {{ _('Read editorial') }}
+                    <a href="{{ url('problem_editorial', problem.code) }}" class="ide-link" title="{{ _('Read editorial') }}">
+                        <i class="fa fa-book"></i><span class="lbl">{{ _('Read editorial') }}</span>
                     </a>
                 {% endif %}
-            </div>
-            {# Admin action buttons #}
-            {% if can_edit_problem or (request.user.is_authenticated and has_tickets) or perms.judge.edit_type_group_all_problem or problem.is_subs_manageable_by(request.user) or (perms.judge.clone_problem and can_edit_problem) %}
-            <div class="ide-admin-actions">
-                {% if can_edit_problem %}
-                    <a href="{{ url('problem_ticket_list', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-flag"></i> {{ _('Manage tickets') }}{% if num_open_tickets %} <span class="badge">{{ num_open_tickets }}</span>{% endif %}
-                    </a>
-                    <a href="{{ url('problem_edit', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-pencil-square-o"></i> {{ _('Edit problem') }}
-                    </a>
-                    {% if not problem.is_manually_managed %}
-                        <a href="{{ url('problem_data', problem.code) }}" class="ide-admin-btn">
-                            <i class="fa fa-database"></i> {{ _('Edit test data') }}
-                        </a>
-                    {% endif %}
-                {% elif request.user.is_authenticated and has_tickets %}
-                    <a href="{{ url('problem_ticket_list', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-flag"></i> {{ _('My tickets') }}{% if num_open_tickets %} <span class="badge">{{ num_open_tickets }}</span>{% endif %}
+                {% if has_pdf_render %}
+                    <a href="{{ url('problem_pdf', problem.code) }}" class="ide-link" title="PDF">
+                        <i class="fa fa-file-pdf-o"></i><span class="lbl">PDF</span>
                     </a>
                 {% endif %}
-                {% if perms.judge.edit_type_group_all_problem %}
-                    <a href="{{ url('problem_edit_type_group', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-object-group"></i> {{ _('Edit type group') }}
+                {% if not can_edit_problem and request.user.is_authenticated and has_tickets %}
+                    <a href="{{ url('problem_ticket_list', problem.code) }}" class="ide-link" title="{{ _('My tickets') }}">
+                        <i class="fa fa-flag"></i><span class="lbl">{{ _('My tickets') }}</span>{% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
                     </a>
                 {% endif %}
-                {% if problem.is_subs_manageable_by(request.user) %}
-                    <a href="{{ url('problem_manage_submissions', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-cogs"></i> {{ _('Manage submissions') }}
-                    </a>
-                {% endif %}
-                {% if perms.judge.clone_problem and can_edit_problem %}
-                    <a href="{{ url('problem_clone', problem.code) }}" class="ide-admin-btn">
-                        <i class="fa fa-clone"></i> {{ _('Clone problem') }}
-                    </a>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-        <div class="ide-L-body">
-            {% if problem.is_suggesting %}
-                <div class="alert alert-warning alert-dismissable">
-                    <a class="close">x</a>
-                    <b>{{ _('This problem is only a suggestion!') }}</b><br>
-                    {{ _('This problem cannot be accessed by normal users until it is approved by an admin or staff.') }}
+                {# Admin actions #}
+                {% if can_edit_problem or perms.judge.edit_type_group_all_problem or problem.is_subs_manageable_by(request.user) %}
+                <div class="ide-menu" id="ide-manage">
+                    <button type="button" class="ide-link" title="{{ _('Admin') }}" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-cog"></i><span class="lbl">{{ _('Admin') }}</span>{% if can_edit_problem and num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
+                        <i class="fa fa-caret-down"></i>
+                    </button>
+                    <div class="ide-menu-list">
+                        {% if can_edit_problem %}
+                            <a href="{{ url('problem_ticket_list', problem.code) }}">
+                                <i class="fa fa-flag"></i> {{ _('Manage tickets') }}{% if num_open_tickets %} <span class="badge" style="background:var(--red);color:#fff;padding:0 5px;border-radius:8px;font-size:10px">{{ num_open_tickets }}</span>{% endif %}
+                            </a>
+                            <a href="{{ url('problem_edit', problem.code) }}">
+                                <i class="fa fa-pencil-square-o"></i> {{ _('Edit problem') }}
+                            </a>
+                            {% if not problem.is_manually_managed %}
+                                <a href="{{ url('problem_data', problem.code) }}">
+                                    <i class="fa fa-database"></i> {{ _('Edit test data') }}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                        {% if perms.judge.edit_type_group_all_problem %}
+                            <a href="{{ url('problem_edit_type_group', problem.code) }}">
+                                <i class="fa fa-tags"></i> {{ _('Edit type group') }}
+                            </a>
+                        {% endif %}
+                        {% if problem.is_subs_manageable_by(request.user) %}
+                            <a href="{{ url('problem_manage_submissions', problem.code) }}">
+                                <i class="fa fa-cogs"></i> {{ _('Manage submissions') }}
+                            </a>
+                        {% endif %}
+                        {% if perms.judge.clone_problem and can_edit_problem %}
+                            <a href="{{ url('problem_clone', problem.code) }}">
+                                <i class="fa fa-files-o"></i> {{ _('Clone problem') }}
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
-            <div id="problem-content" class="content-description">
-                {% include "problem/problem-detail.html" %}
+                {% endif %}
             </div>
-            {% if request.user.is_authenticated and not request.profile.mute %}
-                <hr>
-                <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify">
-                    {%- if comment_lock and request.profile.current_contest.live -%}
-                        {{ _('Request clarification') }}
-                    {%- else -%}
-                        {{ _('Report an issue') }}
-                    {%- endif -%}
-                </a>
-            {% endif %}
+        </div>
+
+        <div class="ide-L-scroll">
+            <div class="ide-L-top">
+                {# Title #}
+                <div class="ide-ttl">
+                    {% if request.user.is_authenticated %}
+                        {% if problem.id in completed_problem_ids %}
+                            <a href="{{ url('user_submissions', problem.code, request.user.username) }}"><i class="solved-problem-color fa fa-check-circle"></i></a>
+                        {% elif problem.id in attempted_problems %}
+                            <a href="{{ url('user_submissions', problem.code, request.user.username) }}"><i class="attempted-problem-color fa fa-frown-o"></i></a>
+                        {% endif %}
+                    {% endif %}
+                    <h2>{{ title }}</h2>
+                </div>
+
+                {# Facts #}
+                <div class="ide-chips">
+                    <span class="chip chip-pts">
+                        {% if contest_problem %}
+                            {{ contest_problem.points }}{% if contest_problem.partial %} (partial){% endif %}
+                        {% else %}
+                            {{ problem.points|floatformat(2) }} pts
+                        {% endif %}
+                    </span>
+                    <span class="chip" title="{{ _('Time limit:') }}"><i class="fa fa-clock-o"></i><b>{{ problem.time_limit }}s</b></span>
+                    <span class="chip" title="{{ _('Memory limit:') }}"><i class="fa fa-server"></i><b>{{ problem.memory_limit|kbsimpleformat }}</b></span>
+                    {% if problem.io_method.method == 'standard' %}
+                        <span class="chip"><i class="fa fa-keyboard-o"></i>stdin / stdout</span>
+                    {% elif problem.io_method.method == 'file' %}
+                        <span class="chip"><i class="fa fa-file-o"></i>{{ problem.io_method.input }} / {{ problem.io_method.output }}</span>
+                    {% endif %}
+                    {# Submission limit (contest) #}
+                    {% if request.user.is_authenticated and request.in_contest and submission_limit and submissions_left is defined %}
+                        <span class="chip chip-warn"><i class="fa fa-exclamation-triangle"></i>
+                            {% if submissions_left > 0 %}{{ submissions_left }} {{ _('submissions left') }}{% else %}{{ _('0 submissions left') }}{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+                {% if problem.language_time_limit %}
+                    <div class="ide-ll"><i class="fa fa-clock-o"></i> {% for n, l in problem.language_time_limit %}<span>{{ n }}: {{ l }}s</span>{% endfor %}</div>
+                {% endif %}
+                {% if problem.language_memory_limit %}
+                    <div class="ide-ll"><i class="fa fa-server"></i> {% for n, l in problem.language_memory_limit %}<span>{{ n }}: {{ l|kbsimpleformat }}</span>{% endfor %}</div>
+                {% endif %}
+
+                <div class="ide-meta">
+                    {# Authors / Source #}
+                    {% if not contest_problem or not contest_problem.contest.hide_problem_authors %}
+                        {% cache 86400 'problem_authors' problem.id LANGUAGE_CODE %}
+                        {% with authors=problem.authors.all() %}
+                            {% if authors %}
+                                <div><i class="fa fa-pencil-square-o"></i>
+                                    {% trans trimmed count=authors|length %}Author:{% pluralize count %}Authors:{% endtrans %}
+                                    {{ link_users(authors) }}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        {% if problem.suggester %}
+                            <div><i class="fa fa-pencil-square-o"></i> {{ _("Suggester:") }} {{ link_user(problem.suggester) }}</div>
+                        {% endif %}
+                        {% endcache %}
+                    {% endif %}
+                    {% if problem.source %}
+                        <div><i class="fa fa-book"></i> {{ _('Source:') }} {{ problem.source }}</div>
+                    {% endif %}
+                    {% if problem.is_editable_by(request.user) and available_judges %}
+                        <div><i class="fa fa-database"></i>
+                            {% trans trimmed count=available_judges|length %}Judge:{% pluralize count %}Judges:{% endtrans %}{{ ' ' }}
+                            {% for j in available_judges %}{{ j.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {# Toggles #}
+                    {% if not contest_problem or not contest_problem.contest.hide_problem_tags %}
+                        <div>
+                            <div class="ide-toggle closed unselectable">
+                                <i class="fa fa-chevron-right fa-fw"></i>
+                                {% trans trimmed count=problem.types_list|length %}Problem type{% pluralize count %}Problem types{% endtrans %}
+                            </div>
+                            <div style="display:none" class="toggled">{{ problem.types_list|join(", ") }}</div>
+                        </div>
+                    {% endif %}
+                    {% if show_languages %}
+                        <div>
+                            <div class="ide-toggle closed unselectable">
+                                <i class="fa fa-chevron-right fa-fw"></i>{{ _('Allowed languages') }}
+                            </div>
+                            <div style="display:none" class="toggled">
+                                {% with usable=problem.usable_common_names, langs=problem.languages_list() %}
+                                    {% for lang in langs %}
+                                        {%- if lang in usable %}{{ lang }}{% else %}<s title="{{ _('No %(lang)s judge online', lang=lang) }}">{{ lang }}</s>{% endif -%}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ide-L-body">
+                {% if problem.is_suggesting %}
+                    <div class="alert alert-warning alert-dismissable">
+                        <a class="close">x</a>
+                        <b>{{ _('This problem is only a suggestion!') }}</b><br>
+                        {{ _('This problem cannot be accessed by normal users until it is approved by an admin or staff.') }}
+                    </div>
+                {% endif %}
+                <div id="problem-content" class="content-description">
+                    {% include "problem/problem-detail.html" %}
+                </div>
+                {% if request.user.is_authenticated and not request.profile.mute %}
+                    <hr>
+                    <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify">
+                        {%- if comment_lock and request.profile.current_contest.live -%}
+                            {{ _('Request clarification') }}
+                        {%- else -%}
+                            {{ _('Report an issue') }}
+                        {%- endif -%}
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -1121,11 +1297,11 @@
 
     {# ===== RIGHT ===== #}
     <div class="ide-R">
-        <div class="ide-top-frame">
-            <div class="ide-bar">
+        <div class="ide-top-frame panel-frame">
+            <div class="ide-bar card-head">
                 {% if not no_judges %}
                     {% if request.user.is_authenticated %}
-                    <select id="ide-lang">
+                    <select id="ide-lang" aria-label="{{ _('Language') }}">
                         {% if form %}
                             {% for lang in form.fields.language.queryset %}
                                 <option value="{{ lang.id }}" data-ace="{{ lang.ace }}" data-fileonly="{{ lang.file_only }}"
@@ -1136,13 +1312,15 @@
                             {% endfor %}
                         {% endif %}
                     </select>
-                    {% endif %}
-                    <button id="btn-run" class="btn-run" type="button">▶ Run</button>
-                    <button id="btn-sub" class="btn-sub" type="button">Submit</button>
-                    <span class="bar-sp"></span>
-                    {% if request.user.is_authenticated %}
                     <span class="save-st"><span id="sv-dot" class="dot saved"></span><span id="sv-txt">Saved</span></span>
+                    {% else %}
+                    <span class="card-ttl"><i class="fa fa-code"></i>{{ _('Code') }}</span>
                     {% endif %}
+                    <span class="bar-sp"></span>
+                    <button id="btn-run" class="btn-run" type="button"><i class="fa fa-play"></i><span>Run</span></button>
+                    <button id="btn-sub" class="btn-sub" type="button"><i class="fa fa-cloud-upload"></i><span>Submit</span></button>
+                {% else %}
+                    <span class="card-ttl"><i class="fa fa-code"></i>{{ _('Code') }}</span>
                 {% endif %}
             </div>
             <div class="ide-editor">
@@ -1168,10 +1346,12 @@
             </div>
         </div>
         <div class="dv dv-h"></div>
-        <div class="ide-bot">
-            <div class="bot-tabs">
-                <div class="bt on" data-t="pnl-tc">Testcase</div>
-                <div class="bt" data-t="pnl-res">Result</div>
+        <div class="ide-bot panel-frame">
+            <div class="bot-tabs card-head">
+                <div class="bt on" data-t="pnl-tc"><i class="fa fa-list-ul"></i>Testcase</div>
+                <div class="bt" data-t="pnl-res"><i class="fa fa-terminal"></i>Result<span id="res-dot" class="bt-dot"></span></div>
+                <span class="bar-sp"></span>
+                <button type="button" id="bot-collapse" class="bot-collapse" title="{{ _('Hide') }}"><i class="fa fa-chevron-down"></i></button>
             </div>
             <div class="bot-content">
                 <div id="pnl-tc" class="pnl on">
@@ -1179,12 +1359,13 @@
                     <div id="tc-body"></div>
                 </div>
                 <div id="pnl-res" class="pnl">
-                    <div id="ide-res"><div class="rs-ph">Run your code to see results here.</div></div>
+                    <div id="ide-res"><div class="rs-ph"><i class="fa fa-play-circle-o"></i>Run your code to see results here.</div></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<div id="ide-toast" class="ide-toast" role="alert"><i class="fa fa-exclamation-circle"></i><span></span></div>
 {% endblock %}
 
 {% block bodyend %}
