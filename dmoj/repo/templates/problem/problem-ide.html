@@ -699,6 +699,15 @@
             }),
             themeCompartment.of(isDark ? CM.oneDark : []),
             langCompartment.of([]),
+            // Like maxlength on the custom input: an edit that would take the code over the submit limit is refused.
+            // Edits that make an already too long code shorter still go through.
+            CM.EditorState.changeFilter.of(function(tr) {
+                if (!tr.docChanged) return true;
+                var n = tr.newDoc.length;
+                if (n <= MAX_SOURCE_LEN || n <= tr.startState.doc.length) return true;
+                notify('Source code too long (max ' + MAX_SOURCE_LEN + ' characters)');
+                return false;
+            }),
             CM.EditorView.updateListener.of(function(update) {
                 if (update.docChanged) {
                     for (var i = 0; i < changeCallbacks.length; i++) changeCallbacks[i]();
@@ -716,7 +725,8 @@
             getValue: function() { return editorView.state.doc.toString(); },
             setValue: function(code, cursor) {
                 editorView.dispatch({
-                    changes: {from: 0, to: editorView.state.doc.length, insert: code || ''}
+                    changes: {from: 0, to: editorView.state.doc.length, insert: code || ''},
+                    filter: false
                 });
                 if (cursor === -1) {
                     editorView.dispatch({selection: {anchor: 0}});
@@ -750,7 +760,13 @@
             $('#sv-txt').text(s === 'saved' ? 'Saved' : s === 'unsaved' ? 'Unsaved' : 'Saving...');
         }
         var _t = null;
+        function showLen() {
+            var len = editorView.state.doc.length;
+            $('#src-counter').text(len + ' / ' + MAX_SOURCE_LEN).toggle(len > MAX_SOURCE_LEN * 0.9)
+                .toggleClass('tc-counter-err', len >= MAX_SOURCE_LEN);
+        }
         ed.on('change', function() {
+            showLen();
             showS('unsaved');
             if (_t) clearTimeout(_t);
             _t = setTimeout(function() { showS('saving'); save(); }, 800);
@@ -1313,6 +1329,7 @@
                         {% endif %}
                     </select>
                     <span class="save-st"><span id="sv-dot" class="dot saved"></span><span id="sv-txt">Saved</span></span>
+                    <span id="src-counter" class="tc-counter tc-counter-warn" style="display: none;"></span>
                     {% else %}
                     <span class="card-ttl"><i class="fa fa-code"></i>{{ _('Code') }}</span>
                     {% endif %}
